@@ -1,0 +1,20 @@
+---
+
+SYSPKGS:
+  - app-admin/sudo
+  - app-antivirus/clamav
+  - app-editors/vim
+  - app-misc/tmux
+  - app-portage/eix
+  - app-portage/gentoolkit
+  - app-portage/layman
+  - app-portage/portage-utils
+  - app-shells/bash-completion 
+  - app-vim/vim-spell-en
+  - app-vim/vim-spell-ru
+  - dev-util/strace
+  - net-analyzer/tcptraceroute
+  - net-analyzer/traceroute
+  - net-dns/bind-tools
+  - net-fs/cifs-utils
+  - net-misc/telnet-bsd

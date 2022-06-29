@@ -1,0 +1,6 @@
+---
+
+- name: install system packages
+  portage:
+    name: "{{ item }}"
+  loop: "{{ SYSPKGS }}"
