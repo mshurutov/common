@@ -1,7 +1,7 @@
 galaxy_info:
-  author: your name
-  description: your role description
-  company: your company (optional)
+  author: Michail Shurutov
+  description: master of many projects
+  company: Galaxy
 
   # If the issue tracker for your role is not on github, uncomment the
   # next line and provide a value
@@ -15,6 +15,7 @@ galaxy_info:
   # - Apache-2.0
   # - CC-BY-4.0
   license: license (GPL-2.0-or-later, MIT, etc)
+   - GPL-2.0-or-later
 
   min_ansible_version: 2.1
 
