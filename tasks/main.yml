@@ -1,4 +1,4 @@
 ---
 
 - name: install packages
-  include_tasks: "{{ ansible_pkg_mgr }}.yml"
+  include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
