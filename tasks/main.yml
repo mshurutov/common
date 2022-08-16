@@ -33,14 +33,11 @@
     - name: set time sync parameters
       ansible.builtin.blockinfile:
         path: "{{ common_time_config_path }}"
-        marker: ""
-        marker_begin: "### Managed by ansible section begin"
-        marker_end: "### Managed by ansible section end"
         insertafter: "^\\[Time\\]"
         state: present
         block: |
           {% for tuple in common_timesync_param %}
-          "{{ tuple }}"
+          {{ tuple }}
           {% endfor %}
       notify: timesync_service restart
   when: common_timesync_init is defined and common_timesync_init | bool
