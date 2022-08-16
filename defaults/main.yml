@@ -62,7 +62,6 @@ common_resolver: 'systemd-resolved'
 common_dns: "192.168.1.3"
 common_fallbackdns: "192.168.1.1"
 common_domains: "example.com"
----
 
 # Directories and any system variables
 portage_etc_dirs:
