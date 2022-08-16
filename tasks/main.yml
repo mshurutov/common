@@ -35,6 +35,7 @@
         path: "{{ common_time_config_path }}"
         marker_begin: "### Managed by ansible section begin"
         marker_end: "### Managed by ansible section end"
+        insertafter: "^\\[Time\\]"
         state: present
         block: |
           {% for tuple in common_timesync_param %}
