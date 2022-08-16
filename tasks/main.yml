@@ -58,19 +58,19 @@
     - name: Set DNS
       ansible.builtin.lineinfile:
         path: "/etc/systemd/resolved.conf"
-        insertafter: "^#*\s*DNS"
+        insertafter: "^#* *DNS"
         line: "DNS={{ common_dns }}"
         state: present
     - name: Set FallbackDNS
       ansible.builtin.lineinfile:
         path: "/etc/systemd/resolved.conf"
-        insertafter: "^#*\s*FallbackDNS"
+        insertafter: "^#* *FallbackDNS"
         line: "FallbackDNS={{ common_fallbackdns }}"
         state: present
     - name: Set Domains
       ansible.builtin.lineinfile:
         path: "/etc/systemd/resolved.conf"
-        insertafter: "^#*\s*Domains"
+        insertafter: "^#* *Domains"
         line: "Domains={{ common_domains }}"
         state: present
     - name: delete /etc/resolv.conf
