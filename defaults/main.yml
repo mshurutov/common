@@ -62,3 +62,37 @@ common_resolver: 'systemd-resolved'
 common_dns: "192.168.1.3"
 common_fallbackdns: "192.168.1.1"
 common_domains: "example.com"
+---
+
+# Directories and any system variables
+portage_etc_dirs:
+  - env
+  - package.accept_keywords
+  - package.env
+  - package.license
+  - package.unmask
+  - package.use
+  - savedconfig/sys-kernel
+  - repos.conf
+portage_etc_templates_dir: "{{ role_path }}/templates/etc/portage"
+portage_env_templates_dir: "{{ role_path }}/templates/etc/portage_env"
+
+# profile
+portage_profile: "10"
+# make.conf settings
+portage_COMMON_FLAGS: "-mtune=generic -Os -pipe"
+portage_CHOST: "x86_64-pc-linux-gnu"
+# Language settings
+portage_lang_list: "ru en"
+# USE-flags
+portage_USE_flags_system: "ipv6 gnutls kerberos ldap pch threads"
+portage_USE_flags_sysapps: "bash-completion gd icu idn lz4 lzma lzo vim-syntax"
+portage_USE_flags_audio: "amr ao audiofile gme mac musepack openal opus sndfile speex wavpack"
+portage_USE_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jbig jpeg jpeg2k \
+	jpegxl gdk-pixbuf imlib lcms mng mspub mwaw openexr raw tiff visio vpx webp \
+	wmf woff2 wpd wps xface xmp xpm xps zmf"
+portage_USE_flags_multimedia: "bmff ffmpeg matroska mp4 ogg theora vcd wxp-compat x265"
+# any settings in array of dict
+portage_SETTINGS:
+  - name: MAKEOPTS
+    value: "-j3"
