@@ -33,6 +33,7 @@
     - name: set time sync parameters
       ansible.builtin.blockinfile:
         path: "{{ common_time_config_path }}"
+        marker: ""
         marker_begin: "### Managed by ansible section begin"
         marker_end: "### Managed by ansible section end"
         insertafter: "^\\[Time\\]"
