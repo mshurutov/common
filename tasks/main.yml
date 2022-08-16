@@ -1,4 +1,88 @@
 ---
 
-- name: install packages
-  include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
+# init of package management system
+include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
+
+- name: set locale and language settings
+  become: yes
+  become_user: root
+  block:
+    - name: create /etc/locale.gen
+      ansible.builtin.template:
+        src: "{{ common_etc_templates_path }}/locale.gen.j2"
+        dest: "/etc/locale.gen"
+      notify: rebuild locales
+    - name: create /etc/locale.conf
+      ansible.builtin.template:
+        src: "{{ common_etc_templates_path }}/locale.conf.j2"
+        dest: "/etc/locale.conf"
+    - name: create /etc/vconsole.conf
+      ansible.builtin.template:
+        src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
+        dest: "/etc/locale.conf"
+  when: common_lang_init is defined and common_lang_init | bool
+  tags: system_init,locale_init
+
+- name: set time settings
+  become: yes
+  become_user: root
+  block:
+    - name: set timezone
+      community.general.timezone:
+        name: Europe/Moscow
+    - name: set time sync parameters
+      ansible.builtin.blockinfile:
+        path: "{{ common_time_config_path }}"
+        marker_begin: "### Managed by ansible section begin"
+        marker_end: "### Managed by ansible section end"
+        state: present
+        block: |
+          {% for tuple in common_timesync_param %}
+          "{{ tuple }}"
+          {% endfor %}
+      notify: timesync_service restart
+  when: common_timesync_init is defined and common_timesync_init | bool
+  tags: system_init, timesync_init
+
+- name: set systemd resolver settings
+  become: yes
+  become_user: root
+  block:
+    - name: set header of file
+      ansible.builtin.blockinfile:
+        path: "/etc/systemd/resolved.conf"
+        insertbefore: "BOF"
+        block: |
+          # File /etc/systemd/resolved.conf
+          # managed by ansible. You shouldn't edit it manually
+    - name: Set DNS
+      ansible.builtin.lineinfile:
+        path: "/etc/systemd/resolved.conf"
+        insertafter: "^#*\s*DNS"
+        line: "DNS={{ common_dns }}"
+        state: present
+    - name: Set FallbackDNS
+      ansible.builtin.lineinfile:
+        path: "/etc/systemd/resolved.conf"
+        insertafter: "^#*\s*FallbackDNS"
+        line: "FallbackDNS={{ common_fallbackdns }}"
+        state: present
+    - name: Set Domains
+      ansible.builtin.lineinfile:
+        path: "/etc/systemd/resolved.conf"
+        insertafter: "^#*\s*Domains"
+        line: "Domains={{ common_domains }}"
+        state: present
+    - name: delete /etc/resolv.conf
+      ansible.builtin.file:
+        path: /etc/resolv.conf
+        state: absent
+    - name: set symlink /etc/resolv.conf -> /run/systemd/resolve/stub-resolv.conf
+      ansible.builtin.file:
+        path: /etc/resolv.conf
+        src: /run/systemd/resolve/stub-resolv.conf
+        state: link
+      notify: resolver restart
+  when: common_resolver == 'systemd-resolved' and common_resolver_init is defined and common_resolver_init | bool
+  tags: system_init, resolver_init
+

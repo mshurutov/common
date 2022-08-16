@@ -1,2 +1,18 @@
 ---
+
 # handlers file for common
+- name: rebuild locales
+  community.general.locale_gen:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ common_locales_list }}"
+
+- name: timesync_service restart
+  ansible.builtin.service:
+    name: "{{ common_timesync_service }}"
+    state: restarted
+
+- name: resolver restart
+  ansible.builtin.service:
+    name: systemd-resolved
+    state: restarted

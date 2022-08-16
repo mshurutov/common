@@ -1,21 +1,64 @@
 ---
 
-SYSPKGS:
-  - app-admin/sudo
-  - app-antivirus/clamav
-  - app-editors/vim
-  - app-misc/tmux
-  - app-portage/eix
-  - app-portage/gentoolkit
-  - app-portage/layman
-  - app-portage/portage-utils
-  - app-shells/bash-completion 
-  - app-vim/vim-spell-en
-  - app-vim/vim-spell-ru
-  - dev-util/strace
-  - net-analyzer/tcptraceroute
-  - net-analyzer/traceroute
-  - net-dns/bind-tools
-  - net-fs/cifs-utils
-  - net-misc/telnet-bsd
-  - sys-apps/net-tools
+# Files and directories
+common_etc_templates_path: "{{ role_path }}/templates"
+common_time_config_path: "/etc/systemd/timesyncd.conf"
+
+# System packages.
+common_syspkgs:
+  - "app-admin/sudo"
+  - "app-antivirus/clamav"
+  - "app-editors/vim"
+  - "app-misc/tmux"
+  - "app-portage/eix"
+  - "app-portage/gentoolkit"
+  - "app-portage/layman"
+  - "app-portage/portage-utils"
+  - "app-shells/bash-completion" 
+  - "app-vim/vim-spell-en"
+  - "app-vim/vim-spell-ru"
+  - "dev-util/strace"
+  - "net-analyzer/tcptraceroute"
+  - "net-analyzer/traceroute"
+  - "net-dns/bind-tools"
+  - "net-fs/cifs-utils"
+  - "net-misc/networkmanager"
+  - "net-misc/telnet-bsd"
+  - "sys-apps/net-tools"
+
+# Locale and language settings
+# list of needed locales
+common_locales_list:
+  - "en_US ISO-8859-1"
+  - "en_US.UTF-8 UTF-8"
+  - "ru_RU.KOI8-R KOI8-R"
+  - "ru_RU.UTF-8 UTF-8"
+  - "ru_RU.CP1251 CP1251"
+# list of language settings
+common_lang_settings:
+  - name: 'LC_ALL'
+    value: ''
+  - name: 'LANG'
+    value: 'ru_RU.UTF-8'
+  - name: 'LC_MESSAGES'
+    value: 'C.UTF-8'
+# list of console font and keyboard settings
+common_kbd_n_cfont_settings:
+  - name: 'KEYMAP'
+    value: 'ru1'
+  - name: 'FONT'
+    value: 'Cyr_a8x16'
+  - name: 'FONT_MAP'
+    value: 'cp866_to_uni'
+
+# Time sync parameters
+common_timesync_param:
+  - "[Time]"
+  - "NTP=0.pool.ntp.org 1.pool.ntp.org 2.pool.ntp.org 3.pool.ntp.org"
+common_timesync_service: "systemd-timesyncd"
+
+# DNS resolver settings
+common_resolver: 'systemd-resolved'
+common_dns: "192.168.1.3"
+common_fallbackdns: "192.168.1.1"
+common_domains: "example.com"
