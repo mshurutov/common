@@ -57,7 +57,7 @@
     - name: Set DNS
       ansible.builtin.lineinfile:
         path: "/etc/systemd/resolved.conf"
-        insertafter: "^#* *DNS"
+        insertafter: "^#* *DNS="
         line: "DNS={{ common_dns }}"
         state: present
     - name: Set FallbackDNS
