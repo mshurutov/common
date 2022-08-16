@@ -3,7 +3,7 @@
 # handlers file for common
 - name: rebuild locales
   community.general.locale_gen:
-    name: "{{ item }}"
+    name: "{{ item.locale }}"
     state: present
   loop: "{{ common_locales_list }}"
 

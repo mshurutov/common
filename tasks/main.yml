@@ -1,7 +1,7 @@
 ---
 
-# init of package management system
-include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
+- name: init of package management system
+  include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
 
 - name: set locale and language settings
   become: yes

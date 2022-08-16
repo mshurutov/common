@@ -18,7 +18,6 @@ common_syspkgs:
   - "app-vim/vim-spell-en"
   - "app-vim/vim-spell-ru"
   - "dev-util/strace"
-  - "net-analyzer/tcptraceroute"
   - "net-analyzer/traceroute"
   - "net-dns/bind-tools"
   - "net-fs/cifs-utils"
@@ -29,11 +28,16 @@ common_syspkgs:
 # Locale and language settings
 # list of needed locales
 common_locales_list:
-  - "en_US ISO-8859-1"
-  - "en_US.UTF-8 UTF-8"
-  - "ru_RU.KOI8-R KOI8-R"
-  - "ru_RU.UTF-8 UTF-8"
-  - "ru_RU.CP1251 CP1251"
+  - locale: "en_US"
+    encoding: "ISO-8859-1"
+  - locale: "en_US.UTF-8"
+    encoding: "UTF-8"
+  - locale: "ru_RU.KOI8-R"
+    encoding: "KOI8-R"
+  - locale: "ru_RU.UTF-8"
+    encoding: "UTF-8"
+  - locale: "ru_RU.CP1251"
+    encoding: "CP1251"
 # list of language settings
 common_lang_settings:
   - name: 'LC_ALL'
