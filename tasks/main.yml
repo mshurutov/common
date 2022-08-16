@@ -19,7 +19,7 @@
     - name: create /etc/vconsole.conf
       ansible.builtin.template:
         src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
-        dest: "/etc/locale.conf"
+        dest: "/etc/vconsole.conf"
   when: common_lang_init is defined and common_lang_init | bool
   tags: system_init,locale_init
 
