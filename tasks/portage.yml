@@ -1,0 +1,21 @@
+---
+
+- name: install all packages
+  community.general.portage:
+    package: "{{ item }}"
+    quiet: yes
+    state: present
+  loop: "{{ common_packages }}"
+  tags: common_install_packages,portage_install_packages
+  when: install_packages_force is defined and install_packages_force | bool
+
+- name: update world
+  community.general.portage:
+    package: "@world"
+    quiet: yes
+    deep: yes
+    newuse: yes
+    update: yes
+    sync: yes
+  tags: common_update_system,portage_update_system
+  when: common_update_system is defined and common_update_system | bool

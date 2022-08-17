@@ -85,3 +85,6 @@
   when: common_resolver == 'systemd-resolved' and common_resolver_init is defined and common_resolver_init | bool
   tags: system_init, resolver_init
 
+- name: install all packages into system
+  include_tasks: "{{ ansible_pkg_mgr }}.yml"
+

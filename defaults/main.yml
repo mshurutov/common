@@ -4,12 +4,14 @@
 common_etc_templates_path: "{{ role_path }}/templates"
 common_time_config_path: "/etc/systemd/timesyncd.conf"
 
-# System packages.
+# System packages for install by portage (Gentoo Linux).
 common_syspkgs:
   - "app-admin/sudo"
   - "app-antivirus/clamav"
+  - "app-arch/p7zip"
   - "app-editors/vim"
   - "app-misc/tmux"
+  - "app-misc/wipe"
   - "app-portage/eix"
   - "app-portage/gentoolkit"
   - "app-portage/layman"
@@ -23,7 +25,27 @@ common_syspkgs:
   - "net-fs/cifs-utils"
   - "net-misc/networkmanager"
   - "net-misc/telnet-bsd"
+  - "sys-apps/lm-sensors"
   - "sys-apps/net-tools"
+  - "sys-boot/grub"
+  - "sys-kernel/gentoo-kernel"
+  - "sys-kernel/linux-firmware"
+  - "sys-process/lsof"
+# All packages for install by portage (Gentoo Linux).
+common_packages:
+  - "app-editors/gvim"
+  - "app-office/libreoffice"
+  - "app-portage/cpuid2cpuflags"
+  - "gnome-extra/nm-applet"
+  - "lxde-base/lxde-meta"
+  - "mail-client/claws-mail"
+  - "sys-apps/mlocate"
+  - "sys-apps/smartmontools"
+  - "sys-fs/xfsprogs"
+  - "x11-base/xorg-server"
+  - "x11-misc/lightdm"
+  - "www-client/firefox"
+  - "www-client/google-chrome"
 
 # Locale and language settings
 # list of needed locales
