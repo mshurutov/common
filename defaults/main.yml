@@ -3,6 +3,11 @@
 # Files and directories
 common_etc_templates_path: "{{ role_path }}/templates"
 common_time_config_path: "/etc/systemd/timesyncd.conf"
+common_ssl_private_keys_dir: "/etc/ssl/private"
+common_ssl_certs_dir: "/etc/ssl/certs"
+common_country_name: "RU"
+common_ssl_common_name: "www.example.com"
+common_ssl_owner_email_address: "admin@example.com"
 
 # System packages for install by portage (Gentoo Linux).
 common_syspkgs:

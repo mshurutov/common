@@ -1,7 +1,20 @@
 ---
 
+- name: set common_hostname if it is not defined
+  ansible.builtin.set_fact:
+    common_hostname: "{{ ansible_hostname + '.' + common_domain_name }}"
+  when: common_hostname is not defined
+  tags: hostname_var_set
+
+- name: set hostname
+  ansible.builtin.hostname:
+    name: "{{ common_hostname }}"
+    use: systemd
+  tags: system_init,hostname_init
+
 - name: init of package management system
   include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
+  tags: system_config
 
 - name: set locale and language settings
   become: yes
@@ -83,8 +96,37 @@
         state: link
       notify: resolver restart
   when: common_resolver == 'systemd-resolved' and common_resolver_init is defined and common_resolver_init | bool
-  tags: system_init, resolver_init
+  tags: system_init,resolver_init
 
 - name: install all packages into system
   include_tasks: "{{ ansible_pkg_mgr }}.yml"
+  tags: system_install
+
+- name: create selfsigned SSL certificate
+  block:
+    - name: create host private key
+      community.crypto.openssl_privatekey:
+        path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.pem"
+        owner: 'root'
+        group: 'root'
+        mode: 0600
+    - name: create host Certificate Signing Request
+      community.crypto.openssl_csr:
+        path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.csr"
+        privatekey_path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.pem"
+        country_name: "{{ common_country_name }}"
+        locality_name: "{{ common_ssl_locality_name | default(omit) }}"
+        common_name: "{{ common_ssl_common_name }}"
+        email_address: "{{ common_ssl_owner_email_address }}"
+        organization_name: "{{ common_ssl_organization_name | default(omit) }}"
+        organizational_unit_name: "{{ common_ssl_organizational_unit_name | default(omit) }}"
+        subject_alt_name: "{{ common_ssl_subject_alt_name | default(omit) }}"
+    - name: create host self signed Certificate
+      community.crypto.x509_certificate:
+        path: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ssl-ca.pem"
+        privatekey_path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.pem"
+        csr_path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.csr"
+        provider: selfsigned
+  when: common_ssl_selfsigned_ca is defined and common_ssl_selfsigned_ca | bool
+  tags: system_init,ssl_ca
 
