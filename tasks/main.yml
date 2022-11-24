@@ -102,18 +102,21 @@
   include_tasks: "{{ ansible_pkg_mgr }}.yml"
   tags: system_install
 
-- name: create selfsigned SSL certificate
+- name: create selfsigned SSL CA
   block:
-    - name: create host private key
+    - name: create CA private key
       community.crypto.openssl_privatekey:
-        path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.pem"
+        path: "{{ common_ssl_CA_pkey }}"
         owner: 'root'
         group: 'root'
         mode: 0600
-    - name: create host Certificate Signing Request
+    - name: create CA Certificate Signing Request
       community.crypto.openssl_csr:
-        path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.csr"
-        privatekey_path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.pem"
+        path: "{{ common_ssl_CA_csr }}"
+        privatekey_path: "{{ common_ssl_CA_pkey }}"
+        basic_constraints:
+          - 'CA:TRUE'
+        basic_constraints_critical: true
         country_name: "{{ common_country_name }}"
         locality_name: "{{ common_ssl_locality_name | default(omit) }}"
         common_name: "{{ common_ssl_common_name }}"
@@ -121,12 +124,33 @@
         organization_name: "{{ common_ssl_organization_name | default(omit) }}"
         organizational_unit_name: "{{ common_ssl_organizational_unit_name | default(omit) }}"
         subject_alt_name: "{{ common_ssl_subject_alt_name | default(omit) }}"
-    - name: create host self signed Certificate
+    - name: create selfsigned Certificate
       community.crypto.x509_certificate:
-        path: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ssl-ca.pem"
-        privatekey_path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.pem"
-        csr_path: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.csr"
+        path: "{{ common_ssl_CA }}"
+        privatekey_path: "{{ common_ssl_CA_pkey }}"
+        csr_path: "{{ common_ssl_CA_csr }}"
         provider: selfsigned
-  when: common_ssl_selfsigned_ca is defined and common_ssl_selfsigned_ca | bool
+        return_content: yes
+      register: ssl_CA_var
+    - name: check if common_local_store directory exists
+      ansible.builtin.file:
+        path: "{{ common_local_store }}"
+        state: directory
+      delegate_to: 127.0.0.1
+    - name: copy SSL CA to accessible place
+      ansible.builtin.copy:
+        dest: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
+        content: "{{ ssl_CA_var.certificate }}"
+      delegate_to: 127.0.0.1
+  when: common_hostname == common_primary_dc
   tags: system_init,ssl_ca
 
+- name: copy selfsigned SSL CA to other hosts
+  ansible.builtin.copy:
+    src: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
+    dest: "{{ common_ssl_CA }}"
+    mode: 0644
+    owner: root
+    group: root
+  when: common_hostname != common_primary_dc
+  tags: system_init,ssl_ca
