@@ -2,6 +2,7 @@
 
 # Files and directories
 common_etc_templates_path: "{{ role_path }}/templates"
+common_vars_dir: "{{ role_path }}/vars"
 common_time_config_path: "/etc/systemd/timesyncd.conf"
 common_ssl_private_keys_dir: "/etc/ssl/private"
 common_ssl_certs_dir: "/etc/ssl/certs"
@@ -14,49 +15,6 @@ common_ssl_owner_email_address: "admin@example.com"
 common_ssl_CA_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.pem"
 common_ssl_CA_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.csr"
 common_ssl_CA: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ssl-ca.pem"
-
-# System packages for install by portage (Gentoo Linux).
-common_syspkgs:
-  - "app-admin/sudo"
-  - "app-antivirus/clamav"
-  - "app-arch/p7zip"
-  - "app-editors/vim"
-  - "app-misc/tmux"
-  - "app-misc/wipe"
-  - "app-portage/eix"
-  - "app-portage/gentoolkit"
-  - "app-portage/layman"
-  - "app-portage/portage-utils"
-  - "app-shells/bash-completion" 
-  - "app-vim/vim-spell-en"
-  - "app-vim/vim-spell-ru"
-  - "dev-util/strace"
-  - "net-analyzer/traceroute"
-  - "net-dns/bind-tools"
-  - "net-fs/cifs-utils"
-  - "net-misc/networkmanager"
-  - "net-misc/telnet-bsd"
-  - "sys-apps/lm-sensors"
-  - "sys-apps/net-tools"
-  - "sys-apps/smartmontools"
-  - "sys-boot/grub"
-  - "sys-kernel/gentoo-kernel"
-  - "sys-kernel/linux-firmware"
-  - "sys-process/lsof"
-# All packages for install by portage (Gentoo Linux).
-common_packages:
-  - "app-editors/gvim"
-  - "app-office/libreoffice"
-  - "app-portage/cpuid2cpuflags"
-  - "gnome-extra/nm-applet"
-  - "lxde-base/lxde-meta"
-  - "mail-client/claws-mail"
-  - "sys-apps/mlocate"
-  - "sys-fs/xfsprogs"
-  - "x11-base/xorg-server"
-  - "x11-misc/lightdm"
-  - "www-client/firefox"
-  - "www-client/google-chrome"
 
 # Locale and language settings
 # list of needed locales
@@ -99,16 +57,60 @@ common_dns: "192.168.1.3"
 common_fallbackdns: "192.168.1.1"
 common_domains: "example.com"
 
+# Any default settings for Gentoo portage
+# System packages for install by portage (Gentoo Linux).
+common_portage_syspkgs:
+  - "app-admin/sudo"
+  - "app-antivirus/clamav"
+  - "app-arch/p7zip"
+  - "app-editors/vim"
+  - "app-misc/tmux"
+  - "app-misc/wipe"
+  - "app-portage/eix"
+  - "app-portage/gentoolkit"
+  - "app-portage/layman"
+  - "app-portage/portage-utils"
+  - "app-shells/bash-completion" 
+  - "app-vim/vim-spell-en"
+  - "app-vim/vim-spell-ru"
+  - "dev-util/strace"
+  - "net-analyzer/traceroute"
+  - "net-dns/bind-tools"
+  - "net-fs/cifs-utils"
+  - "net-misc/networkmanager"
+  - "net-misc/telnet-bsd"
+  - "sys-apps/lm-sensors"
+  - "sys-apps/net-tools"
+  - "sys-apps/smartmontools"
+  - "sys-boot/grub"
+  - "sys-kernel/gentoo-kernel"
+  - "sys-kernel/linux-firmware"
+  - "sys-process/lsof"
+# All packages for install by portage (Gentoo Linux).
+common_portage_packages:
+  - "app-editors/gvim"
+  - "app-office/libreoffice"
+  - "app-portage/cpuid2cpuflags"
+  - "gnome-extra/nm-applet"
+  - "lxde-base/lxde-meta"
+  - "mail-client/claws-mail"
+  - "sys-apps/mlocate"
+  - "sys-fs/xfsprogs"
+  - "x11-base/xorg-server"
+  - "x11-misc/lightdm"
+  - "www-client/firefox"
+  - "www-client/google-chrome"
+
 # Directories and any system variables
 portage_etc_dirs:
-  - env
-  - package.accept_keywords
-  - package.env
-  - package.license
-  - package.unmask
-  - package.use
-  - savedconfig/sys-kernel
-  - repos.conf
+  - "env"
+  - "package.accept_keywords"
+  - "package.env"
+  - "package.license"
+  - "package.unmask"
+  - "package.use"
+  - "savedconfig/sys-kernel"
+  - "repos.conf"
 portage_etc_templates_dir: "{{ role_path }}/templates/etc/portage"
 portage_env_templates_dir: "{{ role_path }}/templates/etc/portage_env"
 
@@ -120,14 +122,13 @@ portage_CHOST: "x86_64-pc-linux-gnu"
 # Language settings
 portage_lang_list: "ru en"
 # USE-flags
-portage_USE_flags_system: "ipv6 gnutls kerberos ldap pch threads"
+portage_USE_flags_system: "ipv6 gnutls gssapi kerberos ldap pch threads"
 portage_USE_flags_sysapps: "bash-completion gd icu idn lz4 lzma lzo vim-syntax"
 portage_USE_flags_audio: "amr ao audiofile gme mac musepack openal opus sndfile speex wavpack"
 portage_USE_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jbig jpeg jpeg2k \
 	jpegxl gdk-pixbuf imlib lcms mng mspub mwaw openexr raw tiff visio vpx webp \
 	wmf woff2 wpd wps xface xmp xpm xps zmf"
 portage_USE_flags_multimedia: "bmff ffmpeg matroska mp4 ogg theora vcd wxp-compat x265"
-# any settings in array of dict
-portage_SETTINGS:
-  - name: MAKEOPTS
-    value: "-j3"
+# any settings are comnined from default, group_all, group, host variables
+portage_SETTINGS_default:
+  MAKEOPTS: "-j{{ ansible_processor_vcpus + 1 }}"

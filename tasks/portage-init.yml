@@ -52,7 +52,7 @@
     package: "{{ item }}"
     quiet: yes
     state: present
-  loop: "{{ common_syspkgs }}"
+  loop: "{{ common_portage_syspkgs }}"
   tags: system_install
 
 - name: check if layman configured correctly

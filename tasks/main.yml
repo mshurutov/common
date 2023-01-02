@@ -1,5 +1,10 @@
 ---
 
+- name: set system-depend variables
+  ansible.builtin.include_vars:
+    file: "{{ common_vars_dir }}/{{ ansible_os_family }}.yml"
+  tags: system_config,system_init,system_install
+  
 - name: set common_hostname if it is not defined
   ansible.builtin.set_fact:
     common_hostname: "{{ ansible_hostname + '.' + common_domain_name }}"
@@ -110,6 +115,8 @@
         owner: 'root'
         group: 'root'
         mode: 0600
+        return_content: true
+      register: ssl_CA_pk_var
     - name: create CA Certificate Signing Request
       community.crypto.openssl_csr:
         path: "{{ common_ssl_CA_csr }}"
@@ -142,15 +149,27 @@
         dest: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
         content: "{{ ssl_CA_var.certificate }}"
       delegate_to: 127.0.0.1
+    - name: copy SSL CA private key to accessible place
+      ansible.builtin.copy:
+        dest: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
+        content: "{{ ssl_CA_pk_var.privatekey }}"
+      delegate_to: 127.0.0.1
   when: common_hostname == common_primary_dc
   tags: system_init,ssl_ca
 
-- name: copy selfsigned SSL CA to other hosts
+- name: copy selfsigned SSL CA and PK to other hosts
   ansible.builtin.copy:
-    src: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
-    dest: "{{ common_ssl_CA }}"
-    mode: 0644
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode }}"
     owner: root
     group: root
+  loop:
+    - src: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
+      dest: "{{ common_ssl_CA }}"
+      mode: "0644"
+    - src: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
+      dest: "{{ common_ssl_CA_pkey }}"
+      mode: "0600"
   when: common_hostname != common_primary_dc
   tags: system_init,ssl_ca
