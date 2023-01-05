@@ -72,36 +72,41 @@
         block: |
           # File /etc/systemd/resolved.conf
           # managed by ansible. You shouldn't edit it manually
+      tags: system_init,resolver_init
     - name: Set DNS
       ansible.builtin.lineinfile:
         path: "/etc/systemd/resolved.conf"
         insertafter: "^#* *DNS="
         line: "DNS={{ common_dns }}"
         state: present
+      tags: system_init,resolver_init
     - name: Set FallbackDNS
       ansible.builtin.lineinfile:
         path: "/etc/systemd/resolved.conf"
         insertafter: "^#* *FallbackDNS"
         line: "FallbackDNS={{ common_fallbackdns }}"
         state: present
+      tags: system_init,resolver_init
     - name: Set Domains
       ansible.builtin.lineinfile:
         path: "/etc/systemd/resolved.conf"
         insertafter: "^#* *Domains"
         line: "Domains={{ common_domains }}"
         state: present
+      tags: system_init,resolver_init
     - name: delete /etc/resolv.conf
       ansible.builtin.file:
         path: /etc/resolv.conf
         state: absent
+      tags: system_init,resolver_init
     - name: set symlink /etc/resolv.conf -> /run/systemd/resolve/stub-resolv.conf
       ansible.builtin.file:
         path: /etc/resolv.conf
         src: /run/systemd/resolve/stub-resolv.conf
         state: link
       notify: resolver restart
+      tags: system_init,resolver_init
   when: common_resolver == 'systemd-resolved' and common_resolver_init is defined and common_resolver_init | bool
-  tags: system_init,resolver_init
 
 - name: install all packages into system
   include_tasks: "{{ ansible_pkg_mgr }}.yml"
