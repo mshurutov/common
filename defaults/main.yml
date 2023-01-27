@@ -80,6 +80,7 @@ common_portage_syspkgs:
   - "net-misc/networkmanager"
   - "net-misc/telnet-bsd"
   - "sys-apps/lm-sensors"
+  - "sys-apps/mlocate"
   - "sys-apps/net-tools"
   - "sys-apps/smartmontools"
   - "sys-boot/grub"
@@ -94,13 +95,11 @@ common_portage_packages:
   - "gnome-extra/nm-applet"
   - "lxde-base/lxde-meta"
   - "mail-client/claws-mail"
-  - "sys-apps/mlocate"
   - "sys-fs/xfsprogs"
   - "x11-base/xorg-server"
   - "x11-misc/lightdm"
   - "www-client/firefox"
   - "www-client/google-chrome"
-
 # Directories and any system variables
 portage_etc_dirs:
   - "env"
@@ -112,10 +111,8 @@ portage_etc_dirs:
   - "savedconfig/sys-kernel"
   - "repos.conf"
 portage_etc_templates_dir: "{{ role_path }}/templates/etc/portage"
-portage_env_templates_dir: "{{ role_path }}/templates/etc/portage_env"
-
 # profile
-portage_profile: "10"
+portage_profile: "default/linux/amd64/17.1/desktop/systemd"
 # make.conf settings
 portage_COMMON_FLAGS: "-mtune=generic -Os -pipe"
 portage_CHOST: "x86_64-pc-linux-gnu"
@@ -129,6 +126,15 @@ portage_USE_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jb
 	jpegxl gdk-pixbuf imlib lcms mng mspub mwaw openexr raw tiff visio vpx webp \
 	wmf woff2 wpd wps xface xmp xpm xps zmf"
 portage_USE_flags_multimedia: "bmff ffmpeg matroska mp4 ogg theora vcd wxp-compat x265"
-# any settings are comnined from default, group_all, group, host variables
+# any settings are combined from default, group_all, group, host variables
 portage_SETTINGS_default:
   MAKEOPTS: "-j{{ ansible_processor_vcpus + 1 }}"
+# By default there is feature distcc is disabled for toolchains build
+portage_env_default:
+  localbuild:
+    env_vars:
+      - "FEATURES=-distcc"
+    pkg:
+      - "sys-devel/binutils"
+      - "sys-devel/gcc"
+      - "sys-libs/glibc"

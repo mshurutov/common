@@ -30,14 +30,17 @@
         src: "{{ common_etc_templates_path }}/locale.gen.j2"
         dest: "/etc/locale.gen"
       notify: rebuild locales
+      tags: system_init,locale_init
     - name: create /etc/locale.conf
       ansible.builtin.template:
         src: "{{ common_etc_templates_path }}/locale.conf.j2"
         dest: "/etc/locale.conf"
+      tags: system_init,locale_init
     - name: create /etc/vconsole.conf
       ansible.builtin.template:
         src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
         dest: "/etc/vconsole.conf"
+      tags: system_init,locale_init
   when: common_lang_init is defined and common_lang_init | bool
   tags: system_init,locale_init
 
@@ -48,6 +51,7 @@
     - name: set timezone
       community.general.timezone:
         name: Europe/Moscow
+      tags: system_init, timesync_init
     - name: set time sync parameters
       ansible.builtin.blockinfile:
         path: "{{ common_time_config_path }}"
@@ -58,6 +62,7 @@
           {{ tuple }}
           {% endfor %}
       notify: timesync_service restart
+      tags: system_init, timesync_init
   when: common_timesync_init is defined and common_timesync_init | bool
   tags: system_init, timesync_init
 

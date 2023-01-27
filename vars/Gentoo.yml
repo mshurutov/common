@@ -5,4 +5,4 @@ portage_ACCEPT_KEYWORDS_list: "{{ [portage_ACCEPT_KEYWORDS_list_group_all | defa
 portage_LICENSE_list: "{{ [portage_LICENSE_list_group_all | default([]), portage_LICENSE_list_group | default([]), portage_LICENSE_list_host | default([])] | community.general.lists_mergeby('pkg', list_merge='append_rp') | sort(attribute='pkg') }}"
 portage_UNMASK_list: "{{ [portage_UNMASK_list_group_all | default([]), portage_UNMASK_list_group | default([]), portage_UNMASK_list_host | default([])] | community.general.lists_mergeby('pkg', list_merge='append_rp') | sort(attribute='pkg') }}"
 portage_USE_list: "{{ [portage_USE_list_group_all | default([]), portage_USE_list_group | default([]), portage_USE_list_host | default([])] | community.general.lists_mergeby('pkg', list_merge='append_rp') | sort(attribute='pkg') }}"
-
+portage_env: "{{ portage_env_default | ansible.builtin.combine(portage_env_group_all | default({}),portage_env_group | default({}),portage_env_host | default({}),list_merge=\"append_rp\",recursive=true) }}"
