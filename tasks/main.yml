@@ -21,97 +21,266 @@
   include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
   tags: system_config
 
-- name: set locale and language settings
-  become: yes
-  become_user: root
-  block:
-    - name: create /etc/locale.gen
-      ansible.builtin.template:
-        src: "{{ common_etc_templates_path }}/locale.gen.j2"
-        dest: "/etc/locale.gen"
-      notify: rebuild locales
-      tags: system_init,locale_init
-    - name: create /etc/locale.conf
-      ansible.builtin.template:
-        src: "{{ common_etc_templates_path }}/locale.conf.j2"
-        dest: "/etc/locale.conf"
-      tags: system_init,locale_init
-    - name: create /etc/vconsole.conf
-      ansible.builtin.template:
-        src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
-        dest: "/etc/vconsole.conf"
-      tags: system_init,locale_init
-  when: common_lang_init is defined and common_lang_init | bool
+- name: create /etc/locale.gen
+  ansible.builtin.template:
+    src: "{{ common_etc_templates_path }}/locale.gen.j2"
+    dest: "/etc/locale.gen"
+  notify: rebuild locales
+  tags: system_init,locale_init
+- name: create /etc/locale.conf
+  ansible.builtin.template:
+    src: "{{ common_etc_templates_path }}/locale.conf.j2"
+    dest: "/etc/locale.conf"
+  tags: system_init,locale_init
+- name: create /etc/vconsole.conf
+  ansible.builtin.template:
+    src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
+    dest: "/etc/vconsole.conf"
   tags: system_init,locale_init
 
-- name: set time settings
-  become: yes
-  become_user: root
+- name: set timezone
+  community.general.timezone:
+    name: "{{ common_timezone }}"
+  tags: system_init,timesync_init
+
+- name: set network parameters for NetworkManager
   block:
-    - name: set timezone
-      community.general.timezone:
-        name: Europe/Moscow
-      tags: system_init, timesync_init
-    - name: set time sync parameters
-      ansible.builtin.blockinfile:
-        path: "{{ common_time_config_path }}"
-        insertafter: "^\\[Time\\]"
-        state: present
-        block: |
-          {% for tuple in common_timesync_param %}
-          {{ tuple }}
-          {% endfor %}
-      notify: timesync_service restart
-      tags: system_init, timesync_init
-  when: common_timesync_init is defined and common_timesync_init | bool
-  tags: system_init, timesync_init
+    - name: set common network parameters
+      community.general.nmcli:
+        addr_gen_mode6: "{{ item.addr_gen_mode6 | default(omit) }}"
+        ageingtime: "{{ item.ageingtime | default(omit) }}"
+        arp_interval: "{{ item.arp_interval | default(omit) }}"
+        arp_ip_target: "{{ item.arp_ip_target | default(omit) }}"
+        autoconnect: "{{ item.autoconnect | default(omit) }}"
+        conn_name: "{{ item.conn_name }}"
+        dhcp_client_id: "{{ item.dhcp_client_id | default(omit) }}"
+        dns4: "{{ item.dns4 | default(common_dns) }}"
+        dns4_ignore_auto: "{{ item.dns4_ignore_auto | default(omit) }}"
+        dns4_search: "{{ item.dns4_search | default(omit) }}"
+        dns6: "{{ item.dns6 | default(omit) }}"
+        dns6_ignore_auto: "{{ item.dns6_ignore_auto | default(omit) }}"
+        dns6_search: "{{ item.dns6_search | default(omit) }}"
+        downdelay: "{{ item.downdelay | default(omit) }}"
+        egress: "{{ item.egress | default(omit) }}"
+        flags: "{{ item.flags | default(omit) }}"
+        forwarddelay: "{{ item.forwarddelay | default(omit) }}"
+        gw4: "{{ item.gw4 }}"
+        gw4_ignore_auto: "{{ item.gw4_ignore_auto | default(omit) }}"
+        gw6: "{{ item.gw6 | default(omit) }}"
+        gw6_ignore_auto: "{{ item.gw6_ignore_auto | default(omit) }}"
+        hairpin: "{{ item.hairpin | default(omit) }}"
+        hellotime: "{{ item.hellotime | default(omit) }}"
+        ifname: "{{ item.ifname }}"
+        ignore_unsupported_suboptions: "{{ item.ignore_unsupported_suboptions | default(omit) }}"
+        ingress: "{{ item.ingress | default(omit) }}"
+        ip4: "{{ item.ip4 }}"
+        ip6: "{{ item.ip6 | default(omit) }}"
+        ip_privacy6: "{{ item.ip_privacy6 | default(omit) }}"
+        ip_tunnel_dev: "{{ item.ip_tunnel_dev | default(omit) }}"
+        ip_tunnel_input_key: "{{ item.ip_tunnel_input_key | default(omit) }}"
+        ip_tunnel_local: "{{ item.ip_tunnel_local | default(omit) }}"
+        ip_tunnel_output_key: "{{ item.ip_tunnel_output_key | default(omit) }}"
+        ip_tunnel_remote: "{{ item.ip_tunnel_remote | default(omit) }}"
+        mac: "{{ item.mac | default(omit) }}"
+        master: "{{ item.master | default(omit) }}"
+        maxage: "{{ item.maxage | default(omit) }}"
+        may_fail4: "{{ item.may_fail4 | default(omit) }}"
+        method4: "{{ item.method4 | default(omit) }}"
+        method6: "{{ item.method6 | default(omit) }}"
+        miimon: "{{ item.miimon | default(omit) }}"
+        mode: "{{ item.mode | default(omit) }}"
+        mtu: "{{ item.mtu | default(omit) }}"
+        never_default4: "{{ item.never_default4 | default(omit) }}"
+        path_cost: "{{ item.path_cost | default(omit) }}"
+        primary: "{{ item.primary | default(omit) }}"
+        priority: "{{ item.priority | default(omit) }}"
+        route_metric4: "{{ item.route_metric4 | default(omit) }}"
+        route_metric6: "{{ item.route_metric6 | default(omit) }}"
+        routes4: "{{ item.routes4 | default(omit) }}"
+        routes6: "{{ item.routes6 | default(omit) }}"
+        routing_rules4: "{{ item.routing_rules4 | default(omit) }}"
+        runner: "{{ item.runner | default(omit) }}"
+        runner_hwaddr_policy: "{{ item.runner_hwaddr_policy | default(omit) }}"
+        slavepriority: "{{ item.slavepriority | default(omit) }}"
+        ssid: "{{ item.ssid | default(omit) }}"
+        state: "{{ item.state }}"
+        stp: "{{ item.stp | default(omit) }}"
+        transport_mode: "{{ item.transport_mode | default(omit) }}"
+        type: "{{ item.type | default('ethernet') }}"
+        updelay: "{{ item.updelay | default(omit) }}"
+        vlandev: "{{ item.vlandev | default(omit) }}"
+        vlanid: "{{ item.vlanid | default(omit) }}"
+        vxlan_id: "{{ item.vxlan_id | default(omit) }}"
+        vxlan_local: "{{ item.vxlan_local | default(omit) }}"
+        vxlan_remote: "{{ item.vxlan_remote | default(omit) }}"
+        xmit_hash_policy: "{{ item.xmit_hash_policy | default(omit) }}"
+        zone: "{{ item.zone | default(omit) }}"
+      loop: "{{ common_nm_connections }}"
+    - name: set GSM network parameters for NetworkManager
+      community.general.nmcli:
+        conn_name: "{{ item.0.conn_name | default(omit) }}"
+        apn: "{{ item.1.apn | default(omit) }}"
+        auto-config: "{{ item.1.auto_config | default(omit) }}"
+        device-id: "{{ item.1.device_id | default(omit) }}"
+        home-only: "{{ item.1.home_only | default(omit) }}"
+        mtu: "{{ item.1.mtu | default(omit) }}"
+        network-id: "{{ item.1.network_id | default(omit) }}"
+        number: "{{ item.1.number | default(omit) }}"
+        password: "{{ item.1.password | default(omit) }}"
+        password-flags: "{{ item.1.password_flags | default(omit) }}"
+        pin: "{{ item.1.pin | default(omit) }}"
+        pin-flags: "{{ item.1.pin_flags | default(omit) }}"
+        sim-id: "{{ item.1.sim_id | default(omit) }}"
+        sim-operator-id: "{{ item.1.sim_operator_id | default(omit) }}"
+        username:
+      loop: "{{ common_nm_connections | subelements('gsm',skip_missing=True) }}"
+    - name: set routes4_extended network parameters for NetworkManager
+      community.general.nmcli:
+        conn_name: "{{ item.0.conn_name }}"
+        cwnd: "{{ item.1.cwnd | default(omit) }}"
+        ip: "{{ item.1.ip }}"
+        metric: "{{ item.1.metric | default(omit) }}"
+        mtu: "{{ item.1.mtu | default(omit) }}"
+        next_hop: "{{ item.1.next_hop | default(omit) }}"
+        onlink: "{{ item.1.onlink | default(omit) }}"
+        table: "{{ item.1.table | default(omit) }}"
+        tos: "{{ item.1.tos | default(omit) }}"
+      loop: "{{ common_nm_connections | subelements('routes4_extended',skip_missing=True) }}"
+    - name: set routes6_extended network parameters for NetworkManager
+      community.general.nmcli:
+        conn_name: "{{ item.0.conn_name | default(omit) }}"
+        cwnd: "{{ item.1.cwnd | default(omit) }}"
+        ip: "{{ item.1.ip }}"
+        metric: "{{ item.1.metric | default(omit) }}"
+        mtu: "{{ item.1.mtu | default(omit) }}"
+        next_hop: "{{ item.1.next_hop | default(omit) }}"
+        onlink: "{{ item.1.onlink | default(omit) }}"
+        table: "{{ item.1.table | default(omit) }}"
+      loop: "{{ common_nm_connections | subelements('routes6_extended',skip_missing=True) }}"
+    - name: set vpn network parameters for NetworkManager
+      community.general.nmcli:
+        conn_name: "{{ item.0.conn_name }}"
+        gateway: "{{ item.1.gateway }}"
+        ipsec-enabled: "{{ item.1.ipsec_enabled | default(omit) }}"
+        ipsec-psk: "{{ item.1.ipsec_psk | default(omit) }}"
+        password-flags: "{{ item.1.password_flags | default(omit) }}"
+        permissions: "{{ item.1.permissions }}"
+        service-type: "{{ item.1.service_type }}"
+        user: "{{ item.1.user }}"
+      loop: "{{ common_nm_connections | subelements('vpn',skip_missing=True) }}"
+    - name: set wifi network parameters for NetworkManager
+      community.general.nmcli:
+        conn_name: "{{ item.0.conn_name }}"
+        ap-isolation: "{{ item.1.ap_isolation | default(omit) }}"
+        assigned-mac-address: "{{ item.1.assigned_mac_address | default(omit) }}"
+        band: "{{ item.1.band | default(omit) }}"
+        bssid: "{{ item.1.bssid | default(omit) }}"
+        channel: "{{ item.1.channel | default(omit) }}"
+        cloned-mac-address: "{{ item.1.cloned_mac_address | default(omit) }}"
+        generate-mac-address-mask: "{{ item.1.generate_mac_address_mask | default(omit) }}"
+        hidden: "{{ item.1.hidden | default(omit) }}"
+        mac-address: "{{ item.1.mac_address | default(omit) }}"
+        mac-address-blacklist: "{{ item.1.mac_address_blacklist | default(omit) }}"
+        mac-address-randomization: "{{ item.1.mac_address_randomization | default(omit) }}"
+        mode: "{{ item.1.mode | default(omit) }}"
+        mtu: "{{ item.1.mtu | default(omit) }}"
+        powersave: "{{ item.1.powersave | default(omit) }}"
+        rate: "{{ item.1.rate | default(omit) }}"
+        tx-power: "{{ item.1.tx_power | default(omit) }}"
+        wake-on-wlan: "{{ item.1.wake_on_wlan | default(omit) }}"
+      loop: "{{ common_nm_connections | subelements('wifi',skip_missing=True) }}"
+    - name: set wifi_sec network parameters for NetworkManager
+      community.general.nmcli:
+        conn_name: "{{ item.0.conn_name }}"
+        auth-alg: "{{ item.1.auth_alg | default(omit) }}"
+        fils: "{{ item.1.fils | default(omit) }}"
+        group: "{{ item.1.group | default(omit) }}"
+        key-mgmt: "{{ item.1.key_mgmt | default(omit) }}"
+        leap-password: "{{ item.1.leap_password | default(omit) }}"
+        leap-password-flags: "{{ item.1.leap_password_flags | default(omit) }}"
+        leap-username: "{{ item.1.leap_username | default(omit) }}"
+        pairwise: "{{ item.1.pairwise | default(omit) }}"
+        pmf: "{{ item.1.pmf | default(omit) }}"
+        proto: "{{ item.1.proto | default(omit) }}"
+        psk: "{{ item.1.psk | default(omit) }}"
+        psk-flags: "{{ item.1.psk_flags | default(omit) }}"
+        wep-key-flags: "{{ item.1.wep_key_flags | default(omit) }}"
+        wep-key-type: "{{ item.1.wep_key_type | default(omit) }}"
+        wep-key0: "{{ item.1.wep_key0 | default(omit) }}"
+        wep-key1: "{{ item.1.wep_key1 | default(omit) }}"
+        wep-key2: "{{ item.1.wep_key2 | default(omit) }}"
+        wep-key3: "{{ item.1.wep_key3 | default(omit) }}"
+        wep-tx-keyidx: "{{ item.1.wep_tx_keyidx | default(omit) }}"
+        wps-method: "{{ item.1.wps_method | default(omit) }}"
+      loop: "{{ common_nm_connections | subelements('wifi_sec',skip_missing=True) }}"
+    - name: set wireguard network parameters for NetworkManager
+      community.general.nmcli:
+        conn_name: "{{ item.0.conn_name }}"
+        fwmark: "{{ item.1.fwmark | default(omit) }}"
+        ip4-auto-default-route: "{{ item.1.ip4_auto_default_route | default(omit) }}"
+        ip6-auto-default-route: "{{ item.1.ip6_auto_default_route | default(omit) }}"
+        listen-port: "{{ item.1.listen_port | default(omit) }}"
+        mtu: "{{ item.1.mtu | default(omit) }}"
+        peer-routes: "{{ item.1.peer_routes | default(omit) }}"
+        private-key: "{{ item.1.private_key | default(omit) }}"
+        private-key-flags: "{{ item.1.private_key_flags | default(omit) }}"
+      loop: "{{ common_nm_connections | subelements('wireguard',skip_missing=True) }}"
+  tags: system_init,network_init
+  when: common_network_manager == 'networkmanager'
+
+- name: set timesync config file header
+  ansible.builtin.blockinfile:
+    path: "{{ common_time_config_path }}"
+    insertbefore: "BOF"
+    block: |
+      # File "{{ common_time_config_path }}"
+      # managed by ansible. You shouldn't edit it manually
+  tags: system_init,timesync_init
+- name: edit time sync config
+  ansible.builtin.lineinfile:
+    path: "{{ common_time_config_path }}"
+    state: present
+    regexp: '^\s*#?\s*{{ item.name }}\s*=.*'
+    line: "{{ item.name }}{% if common_timesync_service == 'systemd-timesyncd' %}'='{% else %}' '{% endif %}{{ item.value }}"
+  loop: "{{ common_timesync_params }}"
+  notify: timesync_service restart
+  tags: system_init,timesync_init
+
+- name: set header of resolver config file
+  ansible.builtin.blockinfile:
+    path: "{{ common_resolver_config }}"
+    insertbefore: "BOF"
+    block: |
+      # File /etc/systemd/resolved.conf
+      # managed by ansible. You shouldn't edit it manually
+  tags: system_init,resolver_init
+  when: common_resolver != 'networkmanager'
+
+- name: Set params in resolver config file
+  ansible.builtin.lineinfile:
+    path: "{{ common_resolver_config }}"
+    regexp: '^#?\s*{{ item.name }}\s*=.*'
+    line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}'='{% else %}' '{% endif %}{{ item.value }}"
+    state: present
+  loop: "{{ common_resolver_params }}"
+  tags: system_init,resolver_init
+  when: common_resolver != 'networkmanager'
 
 - name: set systemd resolver settings
-  become: yes
-  become_user: root
   block:
-    - name: set header of file
-      ansible.builtin.blockinfile:
-        path: "/etc/systemd/resolved.conf"
-        insertbefore: "BOF"
-        block: |
-          # File /etc/systemd/resolved.conf
-          # managed by ansible. You shouldn't edit it manually
-      tags: system_init,resolver_init
-    - name: Set DNS
-      ansible.builtin.lineinfile:
-        path: "/etc/systemd/resolved.conf"
-        insertafter: "^#* *DNS="
-        line: "DNS={{ common_dns }}"
-        state: present
-      tags: system_init,resolver_init
-    - name: Set FallbackDNS
-      ansible.builtin.lineinfile:
-        path: "/etc/systemd/resolved.conf"
-        insertafter: "^#* *FallbackDNS"
-        line: "FallbackDNS={{ common_fallbackdns }}"
-        state: present
-      tags: system_init,resolver_init
-    - name: Set Domains
-      ansible.builtin.lineinfile:
-        path: "/etc/systemd/resolved.conf"
-        insertafter: "^#* *Domains"
-        line: "Domains={{ common_domains }}"
-        state: present
-      tags: system_init,resolver_init
     - name: delete /etc/resolv.conf
       ansible.builtin.file:
         path: /etc/resolv.conf
         state: absent
       tags: system_init,resolver_init
-    - name: set symlink /etc/resolv.conf -> /run/systemd/resolve/stub-resolv.conf
+    - name: set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
       ansible.builtin.file:
         path: /etc/resolv.conf
         src: /run/systemd/resolve/stub-resolv.conf
         state: link
       notify: resolver restart
       tags: system_init,resolver_init
-  when: common_resolver == 'systemd-resolved' and common_resolver_init is defined and common_resolver_init | bool
+  when: common_resolver == 'systemd-resolved'
 
 - name: install all packages into system
   include_tasks: "{{ ansible_pkg_mgr }}.yml"

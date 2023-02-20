@@ -1,0 +1,28 @@
+---
+
+- name: update packages cache
+  ansible.builtin.apt:
+    update_cache: yes
+  tags: apt_init,apt_update_cache
+
+- name: upgrade system
+  ansible.builtin.apt:
+    name: "*"
+    state: latest
+  when: apt_upgrade_force is defined and apt_upgrade_force | bool
+  tags: apt_init,apt_upgrade_system
+  
+- name: install system packages
+  ansible.builtin.apt:
+    name: "{{ apt_system_packages }}"
+  tags: apt_init,apt_install_system
+
+- name: set python3 default interpreter
+  community.general.alternatives:
+    name: "python"
+    link: "/usr/bin/python"
+    path: "{{ item.path }}"
+    priority: "{{ item.priority }}"
+    state: "{{ item.state }}"
+  loop: "{{ apt_python }}"
+  tags: set_python

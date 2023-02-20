@@ -47,16 +47,25 @@ common_kbd_n_cfont_settings:
     value: 'cp866_to_uni'
 
 # Time sync parameters
-common_timesync_param:
-  - "NTP=0.pool.ntp.org 1.pool.ntp.org 2.pool.ntp.org 3.pool.ntp.org"
+common_timesync_params:
+  - name: "NTP"
+    value: "0.pool.ntp.org 1.pool.ntp.org 2.pool.ntp.org 3.pool.ntp.org"
 common_timesync_service: "systemd-timesyncd"
+common_timezone: "Europe/Moscow"
 
+# Network settings
+common_network_manager: 'dhcp'
 # DNS resolver settings
+common_resolver_config: "/etc/systemd/resolved.conf"
 common_resolver: 'systemd-resolved'
-common_dns: "192.168.1.3"
-common_fallbackdns: "192.168.1.1"
-common_domains: "example.com"
-
+common_dns: "192.168.1.1"
+common_domains: "{{ common_domain_name }}"
+common_resolver_params:
+  - name: "DNS"
+    value: "{{ common_dns }}"
+  - name: "Domains"
+    value: "{{ common_domain_name }}"
+#
 # Any default settings for Gentoo portage
 # System packages for install by portage (Gentoo Linux).
 common_portage_syspkgs:
@@ -76,7 +85,6 @@ common_portage_syspkgs:
   - "dev-util/strace"
   - "net-analyzer/traceroute"
   - "net-dns/bind-tools"
-  - "net-fs/cifs-utils"
   - "net-misc/networkmanager"
   - "net-misc/telnet-bsd"
   - "sys-apps/lm-sensors"
@@ -138,3 +146,27 @@ portage_env_default:
       - "sys-devel/binutils"
       - "sys-devel/gcc"
       - "sys-libs/glibc"
+
+# apt (Debian-based system) settings
+apt_system_packages:
+  - "acl"
+  - "vim"
+  - "sudo"
+  - "p7zip"
+  - "wipe"
+  - "bash-completion" 
+  - "strace"
+  - "traceroute"
+  - "bind9-dnsutils"
+  - "bind9-host"
+  - "network-manager"
+  - "telnet"
+  - "mlocate"
+  - "net-tools"
+  - "lsof"
+  - "python3"
+apt_python_version: "3.9"
+apt_python:
+  - path: "/usr/bin/python{{ apt_python_version }}"
+    priority: "2"
+    state: "selected"
