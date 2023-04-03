@@ -5,17 +5,25 @@
     file: "{{ common_vars_dir }}/{{ ansible_os_family }}.yml"
   tags: system_config,system_init,system_install
   
-- name: set common_hostname if it is not defined
+- name: set common_full_hostname if it is not defined
   ansible.builtin.set_fact:
     common_full_hostname: "{{ common_short_hostname + '.' + common_domain_name }}"
-  when: common_hostname is not defined
+  when: common_full_hostname is not defined
   tags: hostname_var_set
 
 - name: set hostname
   ansible.builtin.hostname:
-    name: "{{ common_hostname }}"
+    name: "{{ common_full_hostname }}"
     use: systemd
   tags: system_init,hostname_init
+
+- name: disable bell on shell
+  ansible.builtin.lineinfile:
+    path: '/etc/inputrc'
+    regexp: '^.*bell-style.*'
+    line: 'set bell-style none'
+    state: present
+  tags: system_init,bell_init
 
 - name: init of package management system
   include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
@@ -26,6 +34,7 @@
     src: "{{ common_etc_templates_path }}/locale.gen.j2"
     dest: "/etc/locale.gen"
   notify: rebuild locales
+  when: ansible_os_family == "Gentoo"
   tags: system_init,locale_init
 - name: create /etc/locale.conf
   ansible.builtin.template:
@@ -241,7 +250,7 @@
     path: "{{ common_time_config_path }}"
     state: present
     regexp: '^\s*#?\s*{{ item.name }}\s*=.*'
-    line: "{{ item.name }}{% if common_timesync_service == 'systemd-timesyncd' %}'='{% else %}' '{% endif %}{{ item.value }}"
+    line: "{{ item.name }}{% if common_timesync_service == 'systemd-timesyncd' %}={% else %} {% endif %}{{ item.value }}"
   loop: "{{ common_timesync_params }}"
   notify: timesync_service restart
   tags: system_init,timesync_init
@@ -260,7 +269,7 @@
   ansible.builtin.lineinfile:
     path: "{{ common_resolver_config }}"
     regexp: '^#?\s*{{ item.name }}\s*=.*'
-    line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}'='{% else %}' '{% endif %}{{ item.value }}"
+    line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}={% else %} {% endif %}{{ item.value }}"
     state: present
   loop: "{{ common_resolver_params }}"
   tags: system_init,resolver_init
@@ -333,7 +342,7 @@
         dest: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
         content: "{{ ssl_CA_pk_var.privatekey }}"
       delegate_to: 127.0.0.1
-  when: common_hostname == common_primary_dc
+  when: common_full_hostname == common_primary_dc
   tags: system_init,ssl_ca
 
 - name: copy selfsigned SSL CA and PK to other hosts
@@ -350,5 +359,5 @@
     - src: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
       dest: "{{ common_ssl_CA_pkey }}"
       mode: "0600"
-  when: common_hostname != common_primary_dc
+  when: common_full_hostname != common_primary_dc
   tags: system_init,ssl_ca

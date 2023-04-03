@@ -166,8 +166,32 @@ apt_system_packages:
   - "net-tools"
   - "lsof"
   - "python3"
+  - "tcpdump"
 apt_python_version: "3.9"
 apt_python:
   - path: "/usr/bin/python{{ apt_python_version }}"
     priority: "2"
     state: "selected"
+
+# dnf (RedHat-8+-based system) settings
+dnf_repo_list:
+  - "epel-release"
+dnf_system_packages:
+  - "acl"
+  - "vim-enhanced"
+  - "sudo"
+  - "p7zip"
+  - "nwipe"
+  - "bash-completion" 
+  - "strace"
+  - "traceroute"
+  - "bind-utils"
+  - "NetworkManager"
+  - "NetworkManager-tui"
+  - "telnet"
+  - "mlocate"
+  - "net-tools"
+  - "lsof"
+  - "python3"
+  - "tcpdump"
+  - "systemd-timesyncd"
