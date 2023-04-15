@@ -1,22 +1,26 @@
 ---
 
-# Files and directories
+# any network variables
+common_ip4_default: "127.0.0.1"
+common_short_hostname: "myhost"
+common_domain_name: "example.com"
+common_full_hostname: "{{ common_short_hostname }}.{{ common_domain_name }}"
+# directories for role templates and variables
 common_etc_templates_path: "{{ role_path }}/templates"
 common_vars_dir: "{{ role_path }}/vars"
+# config for time sync service
 common_time_config_path: "/etc/systemd/timesyncd.conf"
+# local_store is used for store any files: certs, keys etc
+common_local_store: "/opt/common_local_store"
+# any SSL variables
+common_country_name: "RU"
+common_ssl_owner_email_address: "admin@example.com"
+common_ssl_common_name: "www.{{ common_domain_name }}"
 common_ssl_private_keys_dir: "/etc/ssl/private"
 common_ssl_certs_dir: "/etc/ssl/certs"
-common_country_name: "RU"
-common_domain_name: "example.com"
-common_local_store: "/var/tmp/common_local_store"
-common_ssl_common_name: "www.{{ common_domain_name }}"
-common_short_hostname: "myhost"
-common_full_hostname: "{{ common_short_hostname }}.{{ common_domain_name }}"
-common_ssl_owner_email_address: "admin@example.com"
 common_ssl_CA_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.pem"
 common_ssl_CA_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.csr"
 common_ssl_CA: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ssl-ca.pem"
-
 # Locale and language settings
 # list of needed locales
 common_locales_list:
@@ -56,6 +60,7 @@ common_timezone: "Europe/Moscow"
 
 # Network settings
 common_network_manager: 'dhcp'
+common_nm_connections: []
 # DNS resolver settings
 common_resolver_config: "/etc/systemd/resolved.conf"
 common_resolver: 'systemd-resolved'
@@ -172,6 +177,7 @@ apt_python:
   - path: "/usr/bin/python{{ apt_python_version }}"
     priority: "2"
     state: "selected"
+apt_repo_list: []
 
 # dnf (RedHat-8+-based system) settings
 dnf_repo_list:

@@ -11,7 +11,7 @@
     state: latest
   when: apt_upgrade_force is defined and apt_upgrade_force | bool
   tags: apt_init,apt_upgrade_system
-  
+
 - name: install system packages
   ansible.builtin.apt:
     name: "{{ apt_system_packages }}"
@@ -26,3 +26,20 @@
     state: "{{ item.state }}"
   loop: "{{ apt_python }}"
   tags: set_python
+
+- name: add repos gpg key
+  ansible.builtin.apt_key:
+    url: "{{ item.gpg_key }}"
+    state: present
+  loop: "{{ apt_repo_list }}"
+  tags: apt_init,apt_add_repo
+
+- name: add repos
+  ansible.builtin.apt_repository:
+    codename: "{{ item.codename }}"
+    repo: "{{ item.repo }}"
+    filename: "{{ item.filename }}"
+    state: "{{ item.state | default(omit) }}"
+  loop: "{{ apt_repo_list }}"
+  tags: apt_init,apt_add_repo
+
