@@ -17,17 +17,18 @@
     use: systemd
   tags: system_init,hostname_init
 
-- name: disable bell on shell
+- name: edit any system config
   ansible.builtin.lineinfile:
-    path: '/etc/inputrc'
-    regexp: '^.*bell-style.*'
-    line: 'set bell-style none'
-    state: present
-  tags: system_init,bell_init
+    path: "{{ item.path }}"
+    regexp: "{{ item.regexp | default(omit) }}"
+    line: "{{ item.line }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ common_system_config }}"
+  tags: system_init,system_config_files
 
 - name: init of package management system
   include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
-  tags: system_config
+  tags: system_pm_init
 
 - name: create /etc/locale.gen
   ansible.builtin.template:
