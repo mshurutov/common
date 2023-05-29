@@ -42,4 +42,3 @@
     state: "{{ item.state | default(omit) }}"
   loop: "{{ apt_repo_list }}"
   tags: apt_init,apt_add_repo
-

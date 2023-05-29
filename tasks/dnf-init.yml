@@ -28,4 +28,3 @@
     name: "{{ dnf_system_packages }}"
     state: present
   tags: dnf_init,dnf_install_system
-  

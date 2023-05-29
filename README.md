@@ -9,6 +9,7 @@ Role common is base role for deploy system settings for all hosts in your infras
 * network settings: IP address(es), hostname, domainname etc;
 * package manager settings;
 * base system packages installing.
+
 Copyright (C) 2023  Mikhail Shurutov
 
 This program is free software; you can redistribute it and/or
