@@ -5,8 +5,8 @@ Role: common
 
 Role common is base role for deploy system settings for all hosts in your infrastructure. All my other roles use any variables from this role.
 * kernel options;
-* disk options: extended partitions, LVM etc;
-* network settings: IP address(es), hostname, domainname etc;
+* disk options;
+* network settings: IP address(es), hostname, domainname, etc;
 * package manager settings;
 * base system packages installing.
 
@@ -30,14 +30,58 @@ Requirements
 ------------
 There is required python v3 because python v2 is out of live.
 
-Example Playbook
+Using a Role
 ----------------
 
-There is example of playbook:
+### Variables Used
 
+* `ANSIBLE_ROOT_DIR` is path for static content: roles,configs,etc, for example: /data/ansible
+* `ANSIBLE_ROOT_ROLE_DIR` is path in `roles_path` config variable, for example: /data/ansible/roles  
+Content of my ~/.ansible.cfg:
+```
+...
+# additional paths to search for roles in, colon separated
+#roles_path    = /etc/ansible/roles
+roles_path    = /data/ansible/roles
+...
+```
+
+### Install role
+#### GIT repo
+
+    user@host ~ $ cd $ANSIBLE_ROOT_ROLE_DIR
+    user@host roles $ git clone https://shurutov@git.code.sf.net/p/common-role/code common
+
+#### Ansible galaxy
+##### Installation from command
+
+    user@host ~ $ cd $ANSIBLE_ROOT_DIR
+    user@host ansible $ ansible-galaxy role install mshurutov.common -p roles
+
+##### Installation from requirements.yml
+
+    user@host ~ $ cd $ANSIBLE_ROOT_DIR
+    user@host ansible $ grep common requirements.yml
+    - name: mshurutov.common
+    user@host ansible $ ansible-galaxy role install -r requirements.yml -p roles
+
+### Example Playbook
+
+#### Role installed as git repo
+
+    ...
     - hosts: all
       roles:
-        - role: common
+         - role: common
+    ...
+
+#### Role installed by ansible-galaxy
+
+    ...
+    - hosts: all
+      roles:
+         - role: mshurutov.common
+    ...
 
 Role Variables
 --------------
