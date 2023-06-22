@@ -28,60 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 Requirements
 ------------
-There is required python v3 because python v2 is out of live.
-
-Using a Role
-----------------
-
-### Variables Used
-
-* `ANSIBLE_ROOT_DIR` is path for static content: roles,configs,etc, for example: /data/ansible
-* `ANSIBLE_ROOT_ROLE_DIR` is path in `roles_path` config variable, for example: /data/ansible/roles  
-Content of my ~/.ansible.cfg:
-```
-...
-# additional paths to search for roles in, colon separated
-#roles_path    = /etc/ansible/roles
-roles_path    = /data/ansible/roles
-...
-```
-
-### Install role
-#### GIT repo
-
-    user@host ~ $ cd $ANSIBLE_ROOT_ROLE_DIR
-    user@host roles $ git clone https://shurutov@git.code.sf.net/p/common-role/code common
-
-#### Ansible galaxy
-##### Installation from command
-
-    user@host ~ $ cd $ANSIBLE_ROOT_DIR
-    user@host ansible $ ansible-galaxy role install mshurutov.common -p roles
-
-##### Installation from requirements.yml
-
-    user@host ~ $ cd $ANSIBLE_ROOT_DIR
-    user@host ansible $ grep common requirements.yml
-    - name: mshurutov.common
-    user@host ansible $ ansible-galaxy role install -r requirements.yml -p roles
-
-### Example Playbook
-
-#### Role installed as git repo
-
-    ...
-    - hosts: all
-      roles:
-         - role: common
-    ...
-
-#### Role installed by ansible-galaxy
-
-    ...
-    - hosts: all
-      roles:
-         - role: mshurutov.common
-    ...
+This role requires python v3 because python v2 is out of live.
 
 Role Variables
 --------------
@@ -161,7 +108,65 @@ There are defined system packages for Gentoo, RedHat8-based, Debian-based Linux 
 
 These utilities may be in several (no same name) packages (see default/main.yml).
 
+Using a Role
+----------------
+
+### Variables Used
+
+* `ANSIBLE_ROOT_DIR` is path for static content: roles,configs,etc, for example: /data/ansible
+* `ANSIBLE_ROOT_ROLE_DIR` is path in `roles_path` config variable, for example: /data/ansible/roles  
+Content of my ~/.ansible.cfg:
+```
+...
+# additional paths to search for roles in, colon separated
+#roles_path    = /etc/ansible/roles
+roles_path    = /data/ansible/roles
+...
+```
+
+### Install role
+#### GIT repo
+
+    user@host ~ $ cd $ANSIBLE_ROOT_ROLE_DIR
+    user@host roles $ git clone https://shurutov@git.code.sf.net/p/common-role/code common
+
+#### Ansible galaxy
+##### Installation from command
+
+    user@host ~ $ cd $ANSIBLE_ROOT_DIR
+    user@host ansible $ ansible-galaxy role install mshurutov.common -p roles
+
+##### Installation from requirements.yml
+
+    user@host ~ $ cd $ANSIBLE_ROOT_DIR
+    user@host ansible $ grep common requirements.yml
+    - name: mshurutov.common
+    user@host ansible $ ansible-galaxy role install -r requirements.yml -p roles
+
+### Example Playbook
+
+#### Role installed as git repo
+
+    ...
+    - hosts: all
+      roles:
+         - role: common
+    ...
+
+#### Role installed by ansible-galaxy
+
+    ...
+    - hosts: all
+      roles:
+         - role: mshurutov.common
+    ...
+
 License
 -------
 
 [GPLv2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt)
+
+Author Information
+------------------
+
+My name is Mikhail Shurutov, I'm an operations engineer since 1997.
