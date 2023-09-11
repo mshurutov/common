@@ -3,7 +3,7 @@
 - name: set system-depend variables
   ansible.builtin.include_vars:
     file: "{{ common_vars_dir }}/{{ ansible_os_family }}.yml"
-  tags: system_config,system_init,system_install
+  tags: system_config,system_init,system_install,system_pm_init
   
 - name: set common_full_hostname if it is not defined
   ansible.builtin.set_fact:

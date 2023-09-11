@@ -74,20 +74,24 @@
   loop: "{{ common_portage_syspkgs }}"
   tags: system_install
 
-- name: check if layman configured correctly
-  ansible.builtin.lineinfile:
-    path: /etc/layman/layman.cfg
-    regexp: "^#?conf_type :"
-    line: "conf_type : repos.conf"
-    state: present
-  tags: portage_init,layman_init,layman_conf
+- name: create eix database after install
+  ansible.builtin.command: eix-update 
+  tags: portage_init,eix_init,eix
 
-- name: (Re)build layman.conf and create eix database
-  block:
-    - name: Rebuild /etc/portage/repos.conf/layman.conf
-      ansible.builtin.command: layman-updater -R
-      tags: portage_init,layman_init
-    - name: create eix database after install
-      ansible.builtin.command: eix-update 
-      tags: portage_init,eix_init,eix
-  when: portage_init_force is defined and portage_init_force | bool
+#- name: check if layman configured correctly
+#  ansible.builtin.lineinfile:
+#    path: /etc/layman/layman.cfg
+#    regexp: "^#?conf_type :"
+#    line: "conf_type : repos.conf"
+#    state: present
+#  tags: portage_init,layman_init,layman_conf
+
+#- name: (Re)build layman.conf and create eix database
+#  block:
+#    - name: Rebuild /etc/portage/repos.conf/layman.conf
+#      ansible.builtin.command: layman-updater -R
+#      tags: portage_init,layman_init
+#    - name: create eix database after install
+#      ansible.builtin.command: eix-update 
+#      tags: portage_init,eix_init,eix
+#  when: portage_init_force is defined and portage_init_force | bool
