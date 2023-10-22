@@ -133,7 +133,7 @@ portage_CHOST: "x86_64-pc-linux-gnu"
 # Language settings
 portage_lang_list: "ru en"
 # USE-flags
-portage_USE_flags_system: "ipv6 gnutls gssapi kerberos ldap pch threads"
+portage_USE_flags_system: "ipv6 gnutls gssapi hardened kerberos ldap pch threads"
 portage_USE_flags_sysapps: "bash-completion gd icu idn lz4 lzma lzo vim-syntax"
 portage_USE_flags_audio: "amr ao audiofile gme mac musepack openal opus sndfile speex wavpack"
 portage_USE_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jbig jpeg jpeg2k \

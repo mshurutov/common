@@ -30,7 +30,7 @@
     group: root
   with_community.general.filetree: "{{ portage_etc_templates_dir }}"
   when: item.state == 'file'
-  tags: portage_init,portage_copy_tmpls
+  tags: portage_init,portage_copy_configs
 
 # Environment (files in /etc/portage/env and /etc/portage/package.env) have not
 # specific names, so it is generated from keys of portage_env dictionary
@@ -78,20 +78,24 @@
   ansible.builtin.command: eix-update 
   tags: portage_init,eix_init,eix
 
-#- name: check if layman configured correctly
-#  ansible.builtin.lineinfile:
-#    path: /etc/layman/layman.cfg
-#    regexp: "^#?conf_type :"
-#    line: "conf_type : repos.conf"
-#    state: present
-#  tags: portage_init,layman_init,layman_conf
-
-#- name: (Re)build layman.conf and create eix database
-#  block:
-#    - name: Rebuild /etc/portage/repos.conf/layman.conf
-#      ansible.builtin.command: layman-updater -R
-#      tags: portage_init,layman_init
-#    - name: create eix database after install
-#      ansible.builtin.command: eix-update 
-#      tags: portage_init,eix_init,eix
-#  when: portage_init_force is defined and portage_init_force | bool
+- name: create distcc configs when it settings is defined
+  block:
+  - name: copy config for distccd
+    ansible.builtin.template:
+      src: "{{ common_etc_templates_path }}/distcc.service.conf.j2"
+      dest: "{{ portage_distcc_config .path }}"
+    notify:
+      - systemd daemon reload
+      - distccd restart
+    tags: distcc_config
+  - name: set distcc environment
+    ansible.builtin.blockinfile:
+      path: "{{ portage_distcc_env.path }}"
+      state: present
+      create: true
+      block: |
+        {% for config_line in portage_distcc_env.lines %}
+        {{ config_line }}
+        {% endfor %}
+    tags: distcc_config
+  when: portage_distcc_use is defined and portage_distcc_use | bool
