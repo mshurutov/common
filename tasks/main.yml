@@ -369,3 +369,35 @@
       mode: "0600"
   when: common_full_hostname != common_primary_dc
   tags: system_init,ssl_ca
+
+- name: create ops user
+  ansible.builtin.user:
+    append: true
+    create_home: true
+    groups:
+    - "{{ common_sudo_group }}"
+    local: true
+    name: "{{ common_ops_user }}"
+    uid: "{{ common_ops_uid }}"
+  tags: sys_ops_user
+
+- name: get id_rsa.pub into variable
+  ansible.builtin.set_fact:
+    local_pub_key: "{{ lookup('file', '~/.ssh/id_rsa.pub' }}"
+  delegate_to: localhost
+  tags: sys_ops_user
+
+- name: add id_rsa.pub into ops user authorized_keys
+  ansible.posix.authorized_key:
+    user: "{{ common_ops_user }}"
+    key: "{{ local_pub_key }}"
+  tags: sys_ops_user
+
+- name: add ops user into sudoers
+  community.general.sudoers:
+    commands: ALL
+    group: "{{ common_sudo_group }}"
+    host: "ALL"
+    name: "ops_user_sudo"
+    nopassword: true
+  tags: sys_ops_user

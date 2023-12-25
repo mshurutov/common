@@ -32,6 +32,19 @@
   when: item.state == 'file'
   tags: portage_init,portage_copy_configs
 
+- name: add local overlays into /etc/portage/repos.conf/local.conf
+  ansible.builtin.blockinfile:
+    path: "/etc/portage/repos.conf/local.conf"
+    create: true
+    block: |
+      [{{ item.key }}]
+      {% for key,value in item.value.items() %}
+      {{ key }} = {{ value }}
+      {% endfor %}
+  loop: "{{ portage_local_repos | dict2items }}"
+  when: portage_local_repos is defined and portage_local_repos | length > 0
+  tags: portage_init,portage_local_repos
+  
 # Environment (files in /etc/portage/env and /etc/portage/package.env) have not
 # specific names, so it is generated from keys of portage_env dictionary
 - name: "create env/{{ item.key }}.conf file"
