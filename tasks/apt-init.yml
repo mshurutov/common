@@ -1,5 +1,12 @@
 ---
 
+- name: set system repos
+  ansible.builtin.template:
+    dest: "/etc/apt/sources.list"
+    src: "{{ common_etc_templates_path }}/apt_sources.list.j2" 
+  when: apt_system_repos | length > 0
+  tags: apt_init,apt_set_system_repos
+    
 - name: update packages cache
   ansible.builtin.apt:
     update_cache: yes

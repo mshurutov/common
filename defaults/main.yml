@@ -6,7 +6,8 @@ common_short_hostname: "myhost"
 common_domain_name: "example.com"
 common_full_hostname: "{{ common_short_hostname }}.{{ common_domain_name }}"
 # directories for role templates and variables
-common_etc_templates_path: "{{ role_path }}/templates"
+common_templates_path: "{{ role_path }}/templates"
+common_etc_templates_path: "{{ common_templates_path }}"
 common_vars_dir: "{{ role_path }}/vars"
 # config for time sync service
 common_time_config_path: "/etc/systemd/timesyncd.conf"
@@ -15,13 +16,14 @@ common_local_store: "/opt/common_local_store"
 # any SSL variables
 common_country_name: "RU"
 common_ssl_owner_email_address: "admin@example.com"
-common_ssl_common_name: "www.{{ common_domain_name }}"
+common_ssl_common_name: "{{ common_domain_name }}"
 common_ssl_private_keys_dir: "/etc/ssl/private"
 common_ssl_certs_dir: "/etc/ssl/certs"
-common_ssl_CA_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.pem"
-common_ssl_CA_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-private.csr"
+common_ssl_CA_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.pem"
+common_ssl_CA_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.csr"
 common_ssl_CA: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ssl-ca.pem"
 # Locale and language settings
+common_locale_config: "/etc/locale.conf"
 # list of needed locales
 common_locales_list:
   - locale: "en_US"
@@ -41,7 +43,7 @@ common_lang_settings:
   - name: 'LANG'
     value: 'ru_RU.UTF-8'
   - name: 'LC_MESSAGES'
-    value: 'C.UTF-8'
+    value: 'en_US.UTF-8'
 # list of console font and keyboard settings
 common_kbd_n_cfont_settings:
   - name: 'KEYMAP'
@@ -71,7 +73,20 @@ common_resolver_params:
     value: "{{ common_dns }}"
   - name: "Domains"
     value: "{{ common_domain_name }}"
-#
+
+# PolicyKit settings.
+common_polkit_rules: []
+#  file {{ common_templates_path }}/10-mount.rules.j2 is used
+#  as template of rules for mount any storage devices
+#  - action: "10-mount"
+#    group: "plugdev"
+#    template_path: "{{ common_templates_path }}"
+#  file {{ common_templates_path }}/20-power.rules.j2 is used
+#  as template of rules for power off/reboot host
+#  - action: "20-power"
+#    group: "wheel"
+#    template_path: "{{ common_templates_path }}"
+
 # Any default settings for Gentoo portage
 # System packages for install by portage (Gentoo Linux).
 common_portage_syspkgs:
@@ -165,6 +180,7 @@ portage_env_default:
       - "sys-libs/glibc"
 
 # apt (Debian-based system) settings
+apt_system_repos: []
 apt_system_packages:
   - "acl"
   - "vim"
@@ -183,7 +199,7 @@ apt_system_packages:
   - "lsof"
   - "python3"
   - "tcpdump"
-apt_python_version: "3.9"
+apt_python_version: "3"
 apt_python:
   - path: "/usr/bin/python{{ apt_python_version }}"
     priority: "2"

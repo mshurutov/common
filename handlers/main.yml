@@ -25,3 +25,8 @@
   ansible.builtin.service:
     name: distccd
     state: restarted
+
+- name: networkmanager restart
+  ansible.builtin.service:
+    name: NetworkManager
+    state: restarted

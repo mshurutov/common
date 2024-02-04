@@ -1,0 +1,19 @@
+
+// File /etc/polkit-1/rules.d/20-power.rules is managed by ansible.
+// Don't edit it manually
+
+polkit.addRule(function(action, subject) {
+  var YES = polkit.Result.YES;
+  // NOTE: there must be a comma at the end of each line except for the last:
+  var permission = {
+    "org.freedesktop.login1.power-off": YES,
+    "org.freedesktop.login1.power-off-ignore-inhibit": YES,
+    "org.freedesktop.login1.power-off-multiple-sessions": YES,
+    "org.freedesktop.login1.reboot": YES,
+    "org.freedesktop.login1.reboot-ignore-inhibit": YES,
+    "org.freedesktop.login1.reboot-multiple-sessions": YES
+  };
+  if (subject.isInGroup("{{ item.group }}")) {
+    return permission[action.id];
+  }
+});

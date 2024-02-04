@@ -1,0 +1,6 @@
+# file /etc/apt/sources.list is managed by ansible
+# DON'T edit this file manually
+
+{% for repo_record in apt_system_repos %}
+{{ repo_record }}
+{% endfor %}
