@@ -1,0 +1,15 @@
+# /etc/systemd/system/{{ systemd_service.unit_name }}{% if systemd_service.instances is defined %}@{% endif %}.{{ systemd_service.task | default('service') }}
+# is managed by ansible don't edit it manually
+{% for section in systemd_service.sections %}
+[{{ section.name }}]
+{% if section.comment is defined %}
+{{ section.comment }}
+{% endif %}
+{% for param in section.params %}
+{% if param.comment is defined %}
+{{ param.comment }}
+{% endif %}
+{{ param.name }}={{ param.value }}
+{% endfor %}
+
+{% endfor %}

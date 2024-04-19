@@ -12,10 +12,20 @@
     name: "{{ common_timesync_service }}"
     state: restarted
 
+- name: timesync_service enable
+  ansible.builtin.service:
+    name: "{{ common_timesync_service }}"
+    enabled: true
+
 - name: resolver restart
   ansible.builtin.service:
     name: systemd-resolved
     state: restarted
+
+- name: resolver enable
+  ansible.builtin.service:
+    name: systemd-resolved
+    enabled: true
 
 - name: systemd daemon reload
   ansible.builtin.systemd_service:
@@ -30,3 +40,14 @@
   ansible.builtin.service:
     name: NetworkManager
     state: restarted
+
+- name: cron start
+  ansible.builtin.service:
+    name: "{{ common_cron_service }}"
+    state: started
+
+- name: cron enable
+  ansible.builtin.service:
+    name: "{{ common_cron_service }}"
+    enabled: true
+    

@@ -2,10 +2,9 @@
 
 - name: install all packages
   community.general.portage:
-    package: "{{ item }}"
+    package: "{{ common_portage_packages }}"
     quiet: yes
     state: present
-  loop: "{{ common_portage_packages }}"
   tags: common_install_packages,portage_install_packages
   when: install_packages_force is defined and install_packages_force | bool
 

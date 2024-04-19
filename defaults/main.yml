@@ -1,5 +1,6 @@
 ---
 
+# By default any settings is defined for Russian because I'm russian
 # any network variables
 common_ip4_default: "127.0.0.1"
 common_short_hostname: "myhost"
@@ -8,6 +9,7 @@ common_full_hostname: "{{ common_short_hostname }}.{{ common_domain_name }}"
 # directories for role templates and variables
 common_templates_path: "{{ role_path }}/templates"
 common_etc_templates_path: "{{ common_templates_path }}"
+common_init_templates_path: "{{ common_templates_path }}/systemd"
 common_vars_dir: "{{ role_path }}/vars"
 # config for time sync service
 common_time_config_path: "/etc/systemd/timesyncd.conf"
@@ -22,6 +24,16 @@ common_ssl_certs_dir: "/etc/ssl/certs"
 common_ssl_CA_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.pem"
 common_ssl_CA_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.csr"
 common_ssl_CA: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ssl-ca.pem"
+# Any system configs settings
+common_system_config_default: []
+#  disable speaker for error key typing
+#  - path: '/etc/inputrc'
+#    regexp: '^.*bell-style.*'
+#    line: 'set bell-style none'
+#  disable blink for nonexist object for soft link
+#  - path: '/etc/DIR_COLORS'
+#    regexp: '^ORPHAN 01;05;37;4'
+#    line: 'ORPHAN 01;37;41  # orphaned syminks'
 # Locale and language settings
 common_locale_config: "/etc/locale.conf"
 # list of needed locales
@@ -74,7 +86,14 @@ common_resolver_params:
   - name: "Domains"
     value: "{{ common_domain_name }}"
 
-# PolicyKit settings.
+# Local sudo settings
+common_sudoers_dir: "/etc/sudoers.d"
+# custom systemd units, default is empty
+common_systemd_units_default: []
+# any crontabs variables, default is empty
+common_cron_service:
+common_crontabs_default: []
+# PolicyKit settings, default is empty
 common_polkit_rules: []
 #  file {{ common_templates_path }}/10-mount.rules.j2 is used
 #  as template of rules for mount any storage devices
@@ -86,60 +105,63 @@ common_polkit_rules: []
 #  - action: "20-power"
 #    group: "wheel"
 #    template_path: "{{ common_templates_path }}"
+common_config_dirs: []
 
 # Any default settings for Gentoo portage
 # System packages for install by portage (Gentoo Linux).
-common_portage_syspkgs:
-  - "app-admin/sudo"
-  - "app-antivirus/clamav"
-  - "app-arch/p7zip"
-  - "app-editors/vim"
-  - "app-eselect/eselect-repository"
-  - "app-misc/tmux"
-  - "app-misc/wipe"
-  - "app-portage/eix"
-  - "app-portage/gentoolkit"
-  - "app-portage/portage-utils"
-  - "app-shells/bash-completion" 
-  - "app-vim/vim-spell-en"
-  - "app-vim/vim-spell-ru"
-  - "dev-util/strace"
-  - "net-analyzer/traceroute"
-  - "net-dns/bind-tools"
-  - "net-misc/networkmanager"
-  - "net-misc/telnet-bsd"
-  - "sys-apps/lm-sensors"
-  - "sys-apps/mlocate"
-  - "sys-apps/net-tools"
-  - "sys-apps/smartmontools"
-  - "sys-boot/grub"
-  - "sys-kernel/gentoo-kernel"
-  - "sys-kernel/linux-firmware"
-  - "sys-process/lsof"
+# Twice commented packages are not needed in containers
+common_portage_tools: []
+#  - pkg: "app-portage/eix"
+#  - pkg: "app-portage/gentoolkit"
+#  - pkg: "app-portage/portage-utils"
+common_portage_packages_default: []
+#  - pkg: "app-admin/sudo"
+#  - pkg: "app-antivirus/clamav"
+#  - pkg: "app-arch/p7zip"
+#  - pkg: "app-editors/vim"
+#  - pkg: "app-eselect/eselect-repository"
+#  - pkg: "app-misc/tmux"
+#  - pkg: "app-misc/wipe"
+#  - pkg: "app-shells/bash-completion" 
+#  - pkg: "app-vim/vim-spell-en"
+#  - pkg: "app-vim/vim-spell-ru"
+#  - pkg: "dev-util/strace"
+#  - pkg: "net-analyzer/traceroute"
+#  - pkg: "net-dns/bind-tools"
+##  - pkg: "net-misc/networkmanager"
+#  - pkg: "net-misc/telnet-bsd"
+#  - pkg: "sys-apps/lm-sensors"
+#  - pkg: "sys-apps/mlocate"
+#  - pkg: "sys-apps/net-tools"
+##  - pkg: "sys-apps/smartmontools"
+##  - pkg: "sys-boot/grub"
+##  - pkg: "sys-kernel/gentoo-kernel"
+##  - pkg: "sys-kernel/linux-firmware"
+#  - pkg: "sys-process/lsof"
 # All packages for install by portage (Gentoo Linux).
-common_portage_packages:
-  - "app-editors/gvim"
-  - "app-office/libreoffice"
-  - "app-portage/cpuid2cpuflags"
-  - "gnome-extra/nm-applet"
-  - "lxde-base/lxde-meta"
-  - "mail-client/claws-mail"
-  - "media-fonts/corefonts"
-  - "media-fonts/crosextrafonts-caladea"
-  - "media-fonts/crosextrafonts-carlito"
-  - "media-fonts/dejavu"
-  - "media-fonts/droid"
-  - "media-fonts/liberation-fonts"
-  - "media-fonts/libertine"
-  - "media-fonts/noto"
-  - "media-fonts/sil-gentium"
-  - "media-fonts/ubuntu-font-family"
-  - "media-fonts/unifont"
-  - "media-fonts/urw-fonts"
-  - "x11-base/xorg-server"
-  - "x11-misc/lightdm"
-  - "www-client/firefox"
-  - "www-client/google-chrome"
+#common_portage_packages_default: []
+#  - pkg: "app-editors/gvim"
+#  - pkg: "app-office/libreoffice"
+#  - pkg: "app-portage/cpuid2cpuflags"
+#  - pkg: "gnome-extra/nm-applet"
+#  - pkg: "lxde-base/lxde-meta"
+#  - pkg: "mail-client/claws-mail"
+#  - pkg: "media-fonts/corefonts"
+#  - pkg: "media-fonts/crosextrafonts-caladea"
+#  - pkg: "media-fonts/crosextrafonts-carlito"
+#  - pkg: "media-fonts/dejavu"
+#  - pkg: "media-fonts/droid"
+#  - pkg: "media-fonts/liberation-fonts"
+#  - pkg: "media-fonts/libertine"
+#  - pkg: "media-fonts/noto"
+#  - pkg: "media-fonts/sil-gentium"
+#  - pkg: "media-fonts/ubuntu-font-family"
+#  - pkg: "media-fonts/unifont"
+#  - pkg: "media-fonts/urw-fonts"
+#  - pkg: "x11-base/xorg-server"
+#  - pkg: "x11-misc/lightdm"
+#  - pkg: "www-client/firefox"
+#  - pkg: "www-client/google-chrome"
 # Directories and any system variables
 portage_etc_dirs:
   - "env"
@@ -150,22 +172,27 @@ portage_etc_dirs:
   - "package.use"
   - "savedconfig/sys-kernel"
   - "repos.conf"
+portage_sets_default: []
+#  toolchain:
+#  - "sys-devel/binutils"
+#  - "sys-devel/gcc"
+#  - "sys-libs/glibc"
+#  - "sys-kernel/linux-headers"
 portage_etc_templates_dir: "{{ role_path }}/templates/etc/portage"
 # profile
-portage_profile: "default/linux/amd64/17.1/desktop/systemd"
+portage_profile: "default/linux/amd64/23.0/desktop/systemd"
 # make.conf settings
 portage_COMMON_FLAGS: "-mtune=generic -Os -pipe"
-portage_CHOST: "x86_64-pc-linux-gnu"
 # Language settings
 portage_lang_list: "ru en"
 # USE-flags
-portage_USE_flags_system: "ipv6 gnutls gssapi hardened kerberos ldap pch threads"
-portage_USE_flags_sysapps: "bash-completion gd icu idn lz4 lzma lzo pulseaudio vim-syntax"
-portage_USE_flags_audio: "amr ao audiofile gme mac musepack openal opus sndfile speex wavpack"
-portage_USE_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jbig jpeg jpeg2k \
-	jpegxl gdk-pixbuf imlib lcms mng mspub mwaw openexr raw tiff visio vpx webp \
-	wmf woff2 wpd wps xface xmp xpm xps zmf"
-portage_USE_flags_multimedia: "bmff ffmpeg matroska mp4 ogg theora vcd wxp-compat x265"
+#portage_USE_flags_system: "ipv6 gnutls gssapi hardened kerberos ldap pch threads"
+#portage_USE_flags_sysapps: "bash-completion gd icu idn lz4 lzma lzo pulseaudio vim-syntax"
+#portage_USE_flags_audio: "amr ao audiofile gme mac musepack openal opus sndfile speex wavpack"
+#portage_USE_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jbig jpeg jpeg2k \
+#	jpegxl gdk-pixbuf imlib lcms mng mspub mwaw openexr raw tiff visio vpx webp \
+#	wmf woff2 wpd wps xface xmp xpm xps zmf"
+#portage_USE_flags_multimedia: "bmff ffmpeg matroska mp4 ogg theora vcd wxp-compat x265"
 # any settings are combined from default, group_all, group, host variables
 portage_SETTINGS_default:
   MAKEOPTS: "-j{{ ansible_processor_vcpus + 1 }}"
@@ -181,24 +208,24 @@ portage_env_default:
 
 # apt (Debian-based system) settings
 apt_system_repos: []
-apt_system_packages:
-  - "acl"
-  - "vim"
-  - "sudo"
-  - "p7zip"
-  - "wipe"
-  - "bash-completion" 
-  - "strace"
-  - "traceroute"
-  - "bind9-dnsutils"
-  - "bind9-host"
-  - "network-manager"
-  - "telnet"
-  - "mlocate"
-  - "net-tools"
-  - "lsof"
-  - "python3"
-  - "tcpdump"
+apt_system_packages_default: []
+#  - "acl"
+#  - "vim"
+#  - "sudo"
+#  - "p7zip"
+#  - "wipe"
+#  - "bash-completion" 
+#  - "strace"
+#  - "traceroute"
+#  - "bind9-dnsutils"
+#  - "bind9-host"
+#  - "network-manager"
+#  - "telnet"
+#  - "mlocate"
+#  - "net-tools"
+#  - "lsof"
+#  - "python3"
+#  - "tcpdump"
 apt_python_version: "3"
 apt_python:
   - path: "/usr/bin/python{{ apt_python_version }}"
@@ -209,22 +236,22 @@ apt_repo_list: []
 # dnf (RedHat-8+-based system) settings
 dnf_repo_list:
   - "epel-release"
-dnf_system_packages:
-  - "acl"
-  - "vim-enhanced"
-  - "sudo"
-  - "p7zip"
-  - "nwipe"
-  - "bash-completion" 
-  - "strace"
-  - "traceroute"
-  - "bind-utils"
-  - "NetworkManager"
-  - "NetworkManager-tui"
-  - "telnet"
-  - "mlocate"
-  - "net-tools"
-  - "lsof"
-  - "python3"
-  - "tcpdump"
-  - "systemd-timesyncd"
+dnf_system_packages_default: []
+#  - "acl"
+#  - "vim-enhanced"
+#  - "sudo"
+#  - "p7zip"
+#  - "wipe"
+#  - "bash-completion" 
+#  - "strace"
+#  - "traceroute"
+#  - "bind-utils"
+#  - "NetworkManager"
+#  - "NetworkManager-tui"
+#  - "telnet"
+#  - "mlocate"
+#  - "net-tools"
+#  - "lsof"
+#  - "python3"
+#  - "tcpdump"
+#  - "systemd-timesyncd"

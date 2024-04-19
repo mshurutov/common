@@ -7,6 +7,13 @@
   check_mode: no
   tags: portage_init,portage_set_profile
 
+# If you want to see current and defined profiles uncomment follow block
+#- name: show current profile
+#  debug:
+#    msg: 
+#    - "Current profile: {{ current_profile.stdout }}"
+#    - "New profile: {{ portage_profile }}"
+#  tags: portage_init,portage_set_profile
 - name: set profile
   ansible.builtin.shell: "eselect profile set {{ portage_profile }}"
   when: portage_profile not in current_profile.stdout
@@ -43,7 +50,7 @@
       {% endfor %}
   loop: "{{ portage_local_repos | dict2items }}"
   when: portage_local_repos is defined and portage_local_repos | length > 0
-  tags: portage_init,portage_local_repos
+  tags: portage_init,portage_local_repos,portage_copy_configs
   
 # Environment (files in /etc/portage/env and /etc/portage/package.env) have not
 # specific names, so it is generated from keys of portage_env dictionary
@@ -59,7 +66,7 @@
       {{ env_line }}
       {% endfor %}
   loop: "{{ lookup('ansible.builtin.dict',portage_env,wantlist=True) }}"
-  tags: portage_init,portage_env
+  tags: portage_init,portage_env,portage_copy_configs
 - name: create portage.env/{{ item.0.key }}.conf file
   ansible.builtin.blockinfile:
     path: "/etc/portage/package.env/{{ item.key }}.conf"
@@ -72,31 +79,58 @@
       {{ pkg }} {{ item.key }}.conf
       {% endfor %}
   loop: "{{ lookup('ansible.builtin.dict',portage_env,wantlist=True) }}"
-  tags: portage_init,portage_env
+  tags: portage_init,portage_env,portage_copy_configs
+
+- name: create sets
+  block:
+  - name: create sets dir
+    ansible.builtin.file:
+      path: "/etc/portage/sets"
+      owner: root
+      group: root
+      state: directory
+  - name: setup user defined sets
+    ansible.builtin.blockinfile:
+      path: "/etc/portage/sets/{{ item.key }}"
+      owner: root
+      group: root
+      state: present
+      create: true
+      block: |
+        {% for pkg in item.value %}
+        {{ pkg }}
+        {% endfor %}
+    loop: "{{ lookup('ansible.builtin.dict',portage_sets,wantlist=True) }}"
+  when: portage_sets is defined and portage_sets | length > 0
+  tags: portage_init,portage_sets,portage_copy_configs
 
 - name: create /etc/portage/savedconfig/sys-kernel/gentoo-kernel
   ansible.builtin.shell: zcat /proc/config.gz > /etc/portage/savedconfig/sys-kernel/gentoo-kernel
   when: portage_init_force is defined and portage_init_force | bool
   tags: portage_init
   
-- name: install base packages
+- name: install portage maintenance packages
   community.general.portage:
-    package: "{{ item }}"
+    package: "{{ common_portage_tools }}"
     quiet: yes
     state: present
-  loop: "{{ common_portage_syspkgs }}"
-  tags: system_install
+  tags: portage_init
 
 - name: create eix database after install
-  ansible.builtin.command: eix-update 
+  ansible.builtin.command: eix-update
   tags: portage_init,eix_init,eix
 
 - name: create distcc configs when it settings is defined
   block:
+  - name: install distcc package
+    community.general.portage:
+      package: "sys-devel/distcc"
+      quiet: yes
+      state: present
   - name: copy config for distccd
     ansible.builtin.template:
       src: "{{ common_etc_templates_path }}/distcc.service.conf.j2"
-      dest: "{{ portage_distcc_config .path }}"
+      dest: "{{ portage_distcc_config.path }}"
     notify:
       - systemd daemon reload
       - distccd restart

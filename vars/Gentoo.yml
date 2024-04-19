@@ -1,8 +1,65 @@
 ---
 
-portage_SETTINGS: "{{ portage_SETTINGS_default | combine(portage_SETTINGS_group_all | default({}), portage_SETTINGS_group | default({}), portage_SETTINGS_host | default({}), list_merge='append_rp') | dict2items(key_name='name', value_name='value')}}"
-portage_ACCEPT_KEYWORDS_list: "{{ [portage_ACCEPT_KEYWORDS_list_group_all | default([]), portage_ACCEPT_KEYWORDS_list_group | default([]), portage_ACCEPT_KEYWORDS_list_host | default([])] | community.general.lists_mergeby('pkg', list_merge='append_rp') | sort(attribute='pkg') }}"
-portage_LICENSE_list: "{{ [portage_LICENSE_list_group_all | default([]), portage_LICENSE_list_group | default([]), portage_LICENSE_list_host | default([])] | community.general.lists_mergeby('pkg', list_merge='append_rp') | sort(attribute='pkg') }}"
-portage_UNMASK_list: "{{ [portage_UNMASK_list_group_all | default([]), portage_UNMASK_list_group | default([]), portage_UNMASK_list_host | default([])] | community.general.lists_mergeby('pkg', list_merge='append_rp') | sort(attribute='pkg') }}"
-portage_USE_list: "{{ [portage_USE_list_group_all | default([]), portage_USE_list_group | default([]), portage_USE_list_host | default([])] | community.general.lists_mergeby('pkg', list_merge='append_rp') | sort(attribute='pkg') }}"
-portage_env: "{{ portage_env_default | ansible.builtin.combine(portage_env_group_all | default({}),portage_env_group | default({}),portage_env_host | default({}),list_merge=\"append_rp\",recursive=true) }}"
+portage_SETTINGS: "{{
+  portage_SETTINGS_default |
+  combine(
+    portage_SETTINGS_group_all | default({}),
+    portage_SETTINGS_group | default({}),
+    portage_SETTINGS_host | default({}),
+    list_merge='append_rp'
+  ) | dict2items(key_name='name', value_name='value')
+}}"
+portage_ACCEPT_KEYWORDS_list: "{{
+  [ portage_ACCEPT_KEYWORDS_list_group_all | default([]),
+    portage_ACCEPT_KEYWORDS_list_group | default([]),
+    portage_ACCEPT_KEYWORDS_list_host | default([])
+  ] | community.general.lists_mergeby('pkg', list_merge='append_rp') |
+  sort(attribute='pkg')
+}}"
+portage_LICENSE_list: "{{
+  [ portage_LICENSE_list_group_all | default([]),
+    portage_LICENSE_list_group | default([]),
+    portage_LICENSE_list_host | default([])
+  ] | community.general.lists_mergeby('pkg', list_merge='append_rp') |
+  sort(attribute='pkg')
+}}"
+portage_UNMASK_list: "{{
+  [ portage_UNMASK_list_group_all | default([]),
+    portage_UNMASK_list_group | default([]),
+    portage_UNMASK_list_host | default([])
+  ] | community.general.lists_mergeby('pkg', list_merge='append_rp') |
+  sort(attribute='pkg')
+}}"
+portage_USE_list: "{{
+  [ portage_USE_list_group_all | default([]),
+    portage_USE_list_group | default([]),
+    portage_USE_list_host | default([])
+  ] | community.general.lists_mergeby('pkg', list_merge='append_rp') |
+  sort(attribute='pkg')
+}}"
+portage_env: "{{
+  portage_env_default |
+  ansible.builtin.combine(
+    portage_env_group_all | default({}),
+    portage_env_group | default({}),
+    portage_env_host | default({}),
+    list_merge='append_rp',recursive=true
+  )
+}}"
+common_portage_packages: "{{
+  [ common_portage_packages_default | default([]),
+    common_portage_packages_group_all | default([]),
+    common_portage_packages_group | default([]),
+    common_portage_packages_host | default([])
+  ] | community.general.lists_mergeby('pkg', list_merge='append_rp')
+}}"
+common_packages: "{{ common_portage_packages | map(attribute='pkg') | list}}"
+portage_sets: "{{
+  portage_sets_default | default([]) |
+  ansible.builtin.combine(
+    portage_sets_group_all | default({}),
+    portage_sets_group | default({}),
+    portage_sets_host | default([]),
+    list_merge='append_rp',recursive=true
+  )
+}}"
