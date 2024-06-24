@@ -4,21 +4,27 @@
 common_system_config: "{{
   [ common_system_config_default | default([]),
     common_system_config_group_all | default([]),
+    common_system_config_supgroup | default([]),
     common_system_config_group | default([]),
+    common_system_config_subgroup | default([]),
     common_system_config_host | default([])
   ] | community.general.lists_mergeby('line',recursive=true,list_merge='append_rp')
 }}"
 common_systemd_units: "{{
   [ common_systemd_units_default | default([]),
     common_systemd_units_group_all | default([]),
+    common_systemd_units_supgroup | default([]),
     common_systemd_units_group | default([]),
+    common_systemd_units_subgroup | default([]),
     common_systemd_units_host | default([])
   ] | community.general.lists_mergeby('unit_name',recursive=true,list_merge='append_rp')
 }}"
 common_crontabs: "{{
   [ common_crontabs_default | default([]),
     common_crontabs_group_all | default([]),
+    common_crontabs_supgroup | default([]),
     common_crontabs_group | default([]),
+    common_crontabs_subgroup | default([]),
     common_crontabs_host | default([])
   ] | community.general.lists_mergeby('name',recursive=true,list_merge='append_rp')
 }}"

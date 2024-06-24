@@ -163,16 +163,17 @@ common_portage_packages_default: []
 #  - pkg: "www-client/firefox"
 #  - pkg: "www-client/google-chrome"
 # Directories and any system variables
-portage_etc_dirs:
-  - "env"
-  - "package.accept_keywords"
-  - "package.env"
-  - "package.license"
-  - "package.unmask"
-  - "package.use"
-  - "savedconfig/sys-kernel"
-  - "repos.conf"
-portage_sets_default: []
+portage_etc_dirs: []
+#  - "env"
+#  - "package.accept_keywords"
+#  - "package.env"
+#  - "package.license"
+#  - "package.mask"
+#  - "package.unmask"
+#  - "package.use"
+#  - "savedconfig/sys-kernel"
+#  - "repos.conf"
+portage_sets_default: {}
 #  toolchain:
 #  - "sys-devel/binutils"
 #  - "sys-devel/gcc"
@@ -198,13 +199,13 @@ portage_SETTINGS_default:
   MAKEOPTS: "-j{{ ansible_processor_vcpus + 1 }}"
 # By default there is feature distcc is disabled for toolchains build
 portage_env_default:
-  localbuild:
-    env_vars:
-      - "FEATURES=-distcc"
-    pkg:
-      - "sys-devel/binutils"
-      - "sys-devel/gcc"
-      - "sys-libs/glibc"
+#  localbuild:
+#    env_vars:
+#      - "FEATURES=-distcc"
+#    pkg:
+#      - "sys-devel/binutils"
+#      - "sys-devel/gcc"
+#      - "sys-libs/glibc"
 
 # apt (Debian-based system) settings
 apt_system_repos: []

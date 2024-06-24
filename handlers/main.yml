@@ -31,11 +31,6 @@
   ansible.builtin.systemd_service:
     daemon_reload: true
 
-- name: distccd restart
-  ansible.builtin.service:
-    name: distccd
-    state: restarted
-
 - name: networkmanager restart
   ansible.builtin.service:
     name: NetworkManager
