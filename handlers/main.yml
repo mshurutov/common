@@ -46,3 +46,7 @@
     name: "{{ common_cron_service }}"
     enabled: true
     
+- name: upload ca
+  ansible.builtin.shell:
+    cmd: "{{ common_upload_ca }}"
+  when: common_upload_ca is defined and common_upload_ca | length > 0

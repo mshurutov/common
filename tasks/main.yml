@@ -3,12 +3,12 @@
 - name: set system-independ variables
   ansible.builtin.include_vars:
     file: "{{ common_vars_dir }}/main.yml"
-  tags: system_config,system_init,system_install,system_pm_init
+  tags: system_config,system_init,system_install,system_pm_init,common_world_install
 
 - name: set system-depend variables
   ansible.builtin.include_vars:
     file: "{{ common_vars_dir }}/{{ ansible_os_family }}.yml"
-  tags: system_config,system_init,system_install,system_pm_init
+  tags: system_config,system_init,system_install,system_pm_init,common_world_install
 
 - name: create any config dirs
   ansible.builtin.file:
@@ -68,10 +68,20 @@
   include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
   tags: system_pm_init
 
+- name: install system packages if need
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ common_system_packages }}"
+  when: common_system_packages is defined and common_system_packages | length > 0
+  tags: system_init,system_install
+
 - name: edit any system config
   ansible.builtin.lineinfile:
     path: "{{ item.path }}"
     regexp: "{{ item.regexp | default(omit) }}"
+    insertafter: "{{ item.insertafter | default(omit) }}"
+    insertbefore: "{{ item.insertbefore | default(omit) }}"
     line: "{{ item.line }}"
     state: "{{ item.state | default('present') }}"
     create: "{{ item.create | default(true) }}"
@@ -245,9 +255,9 @@
     tags: system_init,resolver_init
   when: common_resolver == 'systemd-resolved'
 
-#- name: install and setup system packages
-#  include_tasks: "{{ ansible_pkg_mgr }}.yml"
-#  tags: system_install,common_install
+- name: install all packages
+  include_tasks: "{{ ansible_pkg_mgr }}.yml"
+  tags: common_world_install,common_install
 
 - name: create selfsigned SSL CA
   block:
@@ -313,6 +323,7 @@
   - src: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
     dest: "{{ common_ssl_CA_pkey }}"
     mode: "0600"
+  notify: upload ca
   when: common_full_hostname != common_primary_dc
   tags: system_init,ssl_ca
 

@@ -1,5 +1,5 @@
 ---
-
+# Upgrade system and install packages
 - name: install all packages
   community.general.portage:
     package: "{{ common_portage_packages }}"

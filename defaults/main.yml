@@ -106,7 +106,9 @@ common_polkit_rules: []
 #    group: "wheel"
 #    template_path: "{{ common_templates_path }}"
 common_config_dirs: []
-
+# any systemd modules for example timesync on Alt Linux is a separate package
+common_system_packages:
+#  - "systemd-timesyncd"
 # Any default settings for Gentoo portage
 # System packages for install by portage (Gentoo Linux).
 # Twice commented packages are not needed in containers
