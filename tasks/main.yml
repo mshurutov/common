@@ -19,6 +19,15 @@
 
 - name: create ops user
   block:
+  - name: create sudo and primary group
+    ansible.builtin.group:
+      name: "{{ item.name }}"
+      gid: "{{ item.gid }}"
+    loop:
+    - name: "{{ common_sudo_group }}"
+      gid: "{{ common_sudo_gid }}"
+    - name: "{{ common_ops_group }}"
+      gid: "{{ common_ops_gid }}"
   - name: create user
     ansible.builtin.user:
       append: true
@@ -64,6 +73,16 @@
     use: systemd
   tags: system_init,hostname_init
 
+- name: edit /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    block: |
+      {% for item in common_hosts_settings %}
+      {{ item.ip }} {{ item.fqdn }}{% if item.shortname is defined %} {{ item.shortname }}{% endif +%}
+      {% endfor %}
+  when: common_hosts_settings is defined and common_hosts_settings | length > 0
+  tags: system_init,hostname_init
+
 - name: init of package management system
   include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
   tags: system_pm_init
@@ -95,15 +114,21 @@
   notify: rebuild locales
   when: ansible_os_family == "Gentoo" or ansible_os_family == "Debian"
   tags: system_init,locale_init
+
 - name: create /etc/locale.conf
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/locale.conf.j2"
-    dest: "{{ common_locale_config }}"
+    dest: "{{ lc.config_path }}"
+  loop: "{{ common_lang_settings }}"
+  loop_control:
+    loop_var: lc
   tags: system_init,locale_init
+
 - name: create /etc/vconsole.conf
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
     dest: "/etc/vconsole.conf"
+  when: common_kbd_n_cfont_settings is defined and common_kbd_n_cfont_settings | length > 0
   tags: system_init,locale_init
 
 - name: set network parameters for NetworkManager
@@ -195,137 +220,148 @@
   community.general.timezone:
     name: "{{ common_timezone }}"
   tags: system_init,timesync_init
-- name: set timesync config file header
-  ansible.builtin.blockinfile:
-    path: "{{ common_time_config_path }}"
-    insertbefore: "BOF"
-    block: |
-      # File "{{ common_time_config_path }}"
-      # managed by ansible. You shouldn't edit it manually
-  tags: system_init,timesync_init
-- name: edit time sync config
-  ansible.builtin.lineinfile:
-    path: "{{ common_time_config_path }}"
-    state: present
-    regexp: '^\s*#?\s*{{ item.name }}\s*=.*'
-    line: "{{ item.name }}{% if common_timesync_service == 'systemd-timesyncd' %}={% else %} {% endif %}{{ item.value }}"
-  loop: "{{ common_timesync_params }}"
-  notify:
-  - timesync_service enable
-  - timesync_service restart
-  tags: system_init,timesync_init
 
-- name: set header of resolver config file
-  ansible.builtin.blockinfile:
-    path: "{{ common_resolver_config }}"
-    insertbefore: "BOF"
-    block: |
-      # File {{ common_resolver_config }}
-      # managed by ansible. You shouldn't edit it manually
-  tags: system_init,resolver_init
-
-- name: Set params in resolver config file
-  ansible.builtin.lineinfile:
-    path: "{{ common_resolver_config }}"
-    regexp: '^#?\s*{{ item.name }}\s*=.*'
-    line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}={% else %} {% endif %}{{ item.value }}"
-    state: present
-  loop: "{{ common_resolver_params }}"
-  tags: system_init,resolver_init
-
-- name: set systemd resolver settings
+# Time sync is not need on containers
+- name: set time sync if needed
   block:
-  - name: check if systemd-resolved is started
-    ansible.builtin.service:
-      name: "systemd-resolved"
-      state: "started"
-  - name: delete /etc/resolv.conf
-    ansible.builtin.file:
-      path: /etc/resolv.conf
-      state: absent
-    tags: system_init,resolver_init
-  - name: set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
-    ansible.builtin.file:
-      path: /etc/resolv.conf
-      src: /run/systemd/resolve/stub-resolv.conf
-      state: link
+  - name: set timesync config file header
+    ansible.builtin.blockinfile:
+      path: "{{ common_time_config_path }}"
+      insertbefore: "BOF"
+      create: true
+      block: |
+        # File "{{ common_time_config_path }}"
+        # managed by ansible. You shouldn't edit it manually
+    tags: system_init,timesync_init
+  - name: edit time sync config
+    ansible.builtin.lineinfile:
+      path: "{{ common_time_config_path }}"
+      state: present
+      regexp: '^\s*#?\s*{{ item.name }}\s*=.*'
+      line: "{{ item.name }}{% if common_timesync_service == 'systemd-timesyncd' %}={% else %} {% endif %}{{ item.value }}"
+      create: true
+    loop: "{{ common_timesync_params }}"
     notify:
-    - resolver enable
-    - resolver restart
-    tags: system_init,resolver_init
-  when: common_resolver == 'systemd-resolved'
+    - timesync_service enable
+    - timesync_service restart
+    tags: system_init,timesync_init
+  when: common_timesync_service != 'none'
 
-- name: install all packages
-  include_tasks: "{{ ansible_pkg_mgr }}.yml"
-  tags: common_world_install,common_install
-
-- name: create selfsigned SSL CA
+- name: set resolver settings if needed
   block:
-  - name: create CA private key
-    community.crypto.openssl_privatekey:
-      path: "{{ common_ssl_CA_pkey }}"
-      owner: 'root'
-      group: 'root'
-      mode: 0600
-      return_content: true
-    register: ssl_CA_pk_var
-  - name: create CA Certificate Signing Request
-    community.crypto.openssl_csr:
-      path: "{{ common_ssl_CA_csr }}"
-      privatekey_path: "{{ common_ssl_CA_pkey }}"
-      basic_constraints:
-      - 'CA:TRUE'
-      basic_constraints_critical: true
-      country_name: "{{ common_country_name }}"
-      locality_name: "{{ common_ssl_locality_name | default(omit) }}"
-      common_name: "{{ common_ssl_common_name }}"
-      email_address: "{{ common_ssl_owner_email_address }}"
-      organization_name: "{{ common_ssl_organization_name | default(omit) }}"
-      organizational_unit_name: "{{ common_ssl_organizational_unit_name | default(omit) }}"
-      subject_alt_name: "{{ common_ssl_subject_alt_name | default(omit) }}"
-  - name: create selfsigned Certificate
-    community.crypto.x509_certificate:
-      path: "{{ common_ssl_CA }}"
-      privatekey_path: "{{ common_ssl_CA_pkey }}"
-      csr_path: "{{ common_ssl_CA_csr }}"
-      provider: selfsigned
-      return_content: yes
-    register: ssl_CA_var
-  - name: check if common_local_store directory exists
-    ansible.builtin.file:
-      path: "{{ common_local_store }}"
-      state: directory
-    delegate_to: 127.0.0.1
-  - name: copy SSL CA to accessible place
-    ansible.builtin.copy:
-      dest: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
-      content: "{{ ssl_CA_var.certificate }}"
-    delegate_to: 127.0.0.1
-  - name: copy SSL CA private key to accessible place
-    ansible.builtin.copy:
-      dest: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
-      content: "{{ ssl_CA_pk_var.privatekey }}"
-    delegate_to: 127.0.0.1
-  when: common_full_hostname == common_primary_dc
-  tags: system_init,ssl_ca
+  - name: set header of resolver config file
+    ansible.builtin.blockinfile:
+      path: "{{ common_resolver_config }}"
+      insertbefore: "BOF"
+      block: |
+        # File {{ common_resolver_config }}
+        # managed by ansible. You shouldn't edit it manually
+    tags: system_init,resolver_init
+  - name: Set params in resolver config file
+    ansible.builtin.lineinfile:
+      path: "{{ common_resolver_config }}"
+      regexp: '^#?\s*{{ item.name }}\s*=.*'
+      line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}={% else %} {% endif %}{{ item.value }}"
+      state: present
+    loop: "{{ common_resolver_params }}"
+    tags: system_init,resolver_init
+  - name: set systemd resolver settings
+    block:
+    - name: check if systemd-resolved is started
+      ansible.builtin.service:
+        name: "systemd-resolved"
+        state: "started"
+    - name: delete /etc/resolv.conf
+      ansible.builtin.file:
+        path: /etc/resolv.conf
+        state: absent
+      tags: system_init,resolver_init
+    - name: set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
+      ansible.builtin.file:
+        path: /etc/resolv.conf
+        src: /run/systemd/resolve/stub-resolv.conf
+        state: link
+      notify:
+      - resolver enable
+      - resolver restart
+      tags: system_init,resolver_init
+    when: common_resolver == 'systemd-resolved'
+  when: common_resolver != 'none'
 
-- name: copy selfsigned SSL CA and PK to other hosts
-  ansible.builtin.copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: "{{ item.mode }}"
-    owner: root
-    group: root
-  loop:
-  - src: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
-    dest: "{{ common_ssl_CA }}"
-    mode: "0644"
-  - src: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
-    dest: "{{ common_ssl_CA_pkey }}"
-    mode: "0600"
-  notify: upload ca
-  when: common_full_hostname != common_primary_dc
-  tags: system_init,ssl_ca
+- name: setup selsigned CA
+  block:
+  - name: install all packages
+    include_tasks: "{{ ansible_pkg_mgr }}.yml"
+    tags: common_world_install,common_install
+
+  - name: create selfsigned SSL CA
+    block:
+    - name: create CA private key
+      community.crypto.openssl_privatekey:
+        path: "{{ common_ssl_CA_pkey }}"
+        owner: 'root'
+        group: 'root'
+        mode: 0600
+        return_content: true
+      register: ssl_CA_pk_var
+    - name: create CA Certificate Signing Request
+      community.crypto.openssl_csr:
+        path: "{{ common_ssl_CA_csr }}"
+        privatekey_path: "{{ common_ssl_CA_pkey }}"
+        basic_constraints:
+        - 'CA:TRUE'
+        basic_constraints_critical: true
+        country_name: "{{ common_country_name }}"
+        locality_name: "{{ common_ssl_locality_name | default(omit) }}"
+        common_name: "{{ common_ssl_common_name }}"
+        email_address: "{{ common_ssl_owner_email_address }}"
+        organization_name: "{{ common_ssl_organization_name | default(omit) }}"
+        organizational_unit_name: "{{ common_ssl_organizational_unit_name | default(omit) }}"
+        subject_alt_name: "{{ common_ssl_subject_alt_name | default(omit) }}"
+    - name: create selfsigned Certificate
+      community.crypto.x509_certificate:
+        path: "{{ common_ssl_CA }}"
+        privatekey_path: "{{ common_ssl_CA_pkey }}"
+        csr_path: "{{ common_ssl_CA_csr }}"
+        provider: selfsigned
+        return_content: yes
+      register: ssl_CA_var
+    - name: check if common_local_store directory exists
+      ansible.builtin.file:
+        path: "{{ common_local_store }}"
+        state: directory
+      delegate_to: 127.0.0.1
+    - name: copy SSL CA to accessible place
+      ansible.builtin.copy:
+        dest: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
+        content: "{{ ssl_CA_var.certificate }}"
+      delegate_to: 127.0.0.1
+    - name: copy SSL CA private key to accessible place
+      ansible.builtin.copy:
+        dest: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
+        content: "{{ ssl_CA_pk_var.privatekey }}"
+      delegate_to: 127.0.0.1
+    when: common_full_hostname == common_primary_dc
+    tags: system_init,ssl_ca
+
+  - name: copy selfsigned SSL CA and PK to other hosts
+    ansible.builtin.copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      mode: "{{ item.mode }}"
+      owner: root
+      group: root
+    loop:
+    - src: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
+      dest: "{{ common_ssl_CA }}"
+      mode: "0644"
+    - src: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
+      dest: "{{ common_ssl_CA_pkey }}"
+      mode: "0600"
+    notify: upload ca
+    when: common_full_hostname != common_primary_dc
+    tags: system_init,ssl_ca
+  when: common_selfsigned_ca_enable is defined and common_selfsigned_ca_enable | bool
 
 - name: add selfmade systemd units
   block:

@@ -35,7 +35,6 @@ common_system_config_default: []
 #    regexp: '^ORPHAN 01;05;37;4'
 #    line: 'ORPHAN 01;37;41  # orphaned syminks'
 # Locale and language settings
-common_locale_config: "/etc/locale.conf"
 # list of needed locales
 common_locales_list:
   - locale: "en_US"
@@ -50,6 +49,11 @@ common_locales_list:
     encoding: "CP1251"
 # list of language settings
 common_lang_settings:
+- config_path: "/etc/locale.conf"
+  comment: |
+    # File /etc/locale.conf is managed by ansible.
+    # You shouldn't edit it manually!
+  lang_settings:
   - name: 'LC_ALL'
     value: ''
   - name: 'LANG'
@@ -57,13 +61,13 @@ common_lang_settings:
   - name: 'LC_MESSAGES'
     value: 'en_US.UTF-8'
 # list of console font and keyboard settings
-common_kbd_n_cfont_settings:
-  - name: 'KEYMAP'
-    value: 'ru1'
-  - name: 'FONT'
-    value: 'Cyr_a8x16'
-  - name: 'FONT_MAP'
-    value: 'cp866_to_uni'
+common_kbd_n_cfont_settings: []
+#  - name: 'KEYMAP'
+#    value: 'ru1'
+#  - name: 'FONT'
+#    value: 'Cyr_a8x16'
+#  - name: 'FONT_MAP'
+#    value: 'cp866_to_uni'
 
 # Time sync parameters
 common_timesync_params:
@@ -107,7 +111,7 @@ common_polkit_rules: []
 #    template_path: "{{ common_templates_path }}"
 common_config_dirs: []
 # any systemd modules for example timesync on Alt Linux is a separate package
-common_system_packages:
+common_system_packages: []
 #  - "systemd-timesyncd"
 # Any default settings for Gentoo portage
 # System packages for install by portage (Gentoo Linux).
