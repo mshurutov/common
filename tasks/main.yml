@@ -1,5 +1,4 @@
 ---
-
 - name: set system-independ variables
   ansible.builtin.include_vars:
     file: "{{ common_vars_dir }}/main.yml"
@@ -288,14 +287,22 @@
     when: common_resolver == 'systemd-resolved'
   when: common_resolver != 'none'
 
+- name: install all packages
+  include_tasks: "{{ ansible_pkg_mgr }}.yml"
+  tags: common_world_install,common_install
+
 - name: setup selsigned CA
   block:
-  - name: install all packages
-    include_tasks: "{{ ansible_pkg_mgr }}.yml"
-    tags: common_world_install,common_install
-
   - name: create selfsigned SSL CA
     block:
+    - name: check if CA private key dir exists
+      ansible.builtin.file:
+        path: "{{ common_ssl_private_keys_dir }}"
+        state: directory
+    - name: check if CA dir exists
+      ansible.builtin.file:
+        path: "{{ common_ssl_certs_dir }}"
+        state: directory
     - name: create CA private key
       community.crypto.openssl_privatekey:
         path: "{{ common_ssl_CA_pkey }}"
@@ -326,6 +333,9 @@
         provider: selfsigned
         return_content: yes
       register: ssl_CA_var
+    - name: generate new DB of CA if needed
+      ansible.builtin.command: "{{ common_ssl_ca_generate_cmd }}"
+      when: common_ssl_ca_generate_cmd and common_ssl_ca_generate_cmd | length > 0
     - name: check if common_local_store directory exists
       ansible.builtin.file:
         path: "{{ common_local_store }}"

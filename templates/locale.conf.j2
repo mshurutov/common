@@ -1,6 +1,5 @@
 {% if lc.comment is defined %}
-{{ lc.comment }}
-
+{{ lc.comment -}}
 {% endif %}
 {% for langset in lc.lang_settings %}
 {{ langset.name }}="{{ langset.value }}"
