@@ -63,7 +63,7 @@ portage_env: "{{
     portage_env_supgroup | default({}),
     portage_env_group | default({}),
     portage_env_subgroup | default({}),
-    portage_env_host | default({})
+    portage_env_host | default({}),
     list_merge='append_rp',recursive=true
   )
 }}"
@@ -84,7 +84,7 @@ portage_sets: "{{
     portage_sets_supgroup | default({}),
     portage_sets_group | default({}),
     portage_sets_subgroup | default({}),
-    portage_sets_host | default({})
+    portage_sets_host | default({}),
     list_merge='append_rp',recursive=true
   )
 }}"
