@@ -22,11 +22,7 @@
     ansible.builtin.group:
       name: "{{ item.name }}"
       gid: "{{ item.gid }}"
-    loop:
-    - name: "{{ common_sudo_group }}"
-      gid: "{{ common_sudo_gid }}"
-    - name: "{{ common_ops_group }}"
-      gid: "{{ common_ops_gid }}"
+    loop: "{{ common_sudo_groups }}"
   - name: create user
     ansible.builtin.user:
       append: true
