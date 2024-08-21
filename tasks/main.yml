@@ -84,7 +84,7 @@
 
 - name: install system packages if need
   ansible.builtin.package:
-    name: "{{ item }}"
+    name: "{{ item.pkg }}"
     state: present
   loop: "{{ common_system_packages }}"
   when: common_system_packages is defined and common_system_packages | length > 0
