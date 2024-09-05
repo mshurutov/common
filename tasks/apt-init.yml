@@ -1,30 +1,29 @@
 ---
-
-- name: set system repos
+- name: Set system repos
   ansible.builtin.template:
     dest: "/etc/apt/sources.list"
     src: "{{ common_etc_templates_path }}/apt_sources.list.j2" 
   when: apt_system_repos | length > 0
   tags: apt_init,apt_set_system_repos
     
-- name: update packages cache
+- name: Update packages cache
   ansible.builtin.apt:
     update_cache: yes
   tags: apt_init,apt_update_cache
 
-- name: upgrade system
+- name: Upgrade system
   ansible.builtin.apt:
     name: "*"
     state: latest
   when: apt_upgrade_force is defined and apt_upgrade_force | bool
   tags: apt_init,apt_upgrade_system
 
-- name: install system packages
+- name: Install system packages
   ansible.builtin.apt:
     name: "{{ apt_system_packages }}"
   tags: apt_init,system_install
 
-- name: set python3 default interpreter
+- name: Set python3 default interpreter
   community.general.alternatives:
     name: "python"
     link: "/usr/bin/python"
@@ -34,14 +33,14 @@
   loop: "{{ apt_python }}"
   tags: set_python
 
-- name: add repos gpg key
+- name: Add repos gpg key
   ansible.builtin.apt_key:
     url: "{{ item.gpg_key }}"
     state: present
   loop: "{{ apt_repo_list }}"
   tags: apt_init,apt_add_repo
 
-- name: add repos
+- name: Add repos
   ansible.builtin.apt_repository:
     codename: "{{ item.codename }}"
     repo: "{{ item.repo }}"

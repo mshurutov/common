@@ -1,29 +1,39 @@
 ---
-- name: set system-independ variables
+- name: Check if ansible version is equal or greater than 2.11
+  ansible.builtin.fail:
+    msg: "Ansible core should be equal or greater than 2.11"
+  when: ansible_version.full is ansible.builtin.version('2.11','<')
+
+- name: Check if python is equal or greater than 3
+  ansible.builtin.fail:
+    msg: "Python should be equal or greater than 3"
+  when: ansible_python.version.major is ansible.builtin.version('3','<')
+
+- name: Set system-independ variables
   ansible.builtin.include_vars:
     file: "{{ common_vars_dir }}/main.yml"
   tags: system_config,system_init,system_install,system_pm_init,common_world_install
 
-- name: set system-depend variables
+- name: Set system-depend variables
   ansible.builtin.include_vars:
     file: "{{ common_vars_dir }}/{{ ansible_os_family }}.yml"
   tags: system_config,system_init,system_install,system_pm_init,common_world_install
 
-- name: create any config dirs
+- name: Create any config dirs
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
   loop: "{{ common_config_dirs }}"
   tags: system_init,system_config,system_config_dirs
 
-- name: create ops user
+- name: Create ops user
   block:
-  - name: create sudo and primary group
+  - name: Create sudo and primary group
     ansible.builtin.group:
       name: "{{ item.name }}"
       gid: "{{ item.gid }}"
     loop: "{{ common_sudo_groups }}"
-  - name: create user
+  - name: Create user
     ansible.builtin.user:
       append: true
       create_home: true
@@ -32,21 +42,21 @@
       name: "{{ common_ops_user }}"
       uid: "{{ common_ops_uid }}"
     tags: system_init,sys_ops_user
-  - name: get id_rsa.pub into variable
+  - name: Get id_rsa.pub into variable
     ansible.builtin.set_fact:
       local_pub_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
     tags: system_init,sys_ops_user
-  - name: add id_rsa.pub into ops user authorized_keys
+  - name: Add id_rsa.pub into ops user authorized_keys
     ansible.posix.authorized_key:
       user: "{{ common_ops_user }}"
       key: "{{ local_pub_key }}"
     tags: system_init,sys_ops_user
-  - name: check if sudoers directory exists
+  - name: Check if sudoers directory exists
     ansible.builtin.file:
       path: "{{ common_sudoers_dir }}"
       state: directory
     tags: system_init,sys_ops_user
-  - name: add ops user into sudoers
+  - name: Add ops user into sudoers
     community.general.sudoers:
       commands: ALL
       group: "{{ common_sudo_group }}"
@@ -56,19 +66,19 @@
   tags: system_init,sys_ops_user
   when: common_ops_user is defined and common_ops_user | length > 0
 
-- name: set common_full_hostname if it is not defined
+- name: Set common_full_hostname if it is not defined
   ansible.builtin.set_fact:
     common_full_hostname: "{{ common_short_hostname + '.' + common_domain_name }}"
   when: common_full_hostname is not defined
   tags: system_init,hostname_init,hostname_var_set
 
-- name: set hostname
+- name: Set hostname
   ansible.builtin.hostname:
     name: "{{ common_full_hostname }}"
     use: systemd
   tags: system_init,hostname_init
 
-- name: edit /etc/hosts
+- name: Edit /etc/hosts
   ansible.builtin.blockinfile:
     path: /etc/hosts
     block: |
@@ -78,11 +88,11 @@
   when: common_hosts_settings is defined and common_hosts_settings | length > 0
   tags: system_init,hostname_init
 
-- name: init of package management system
+- name: Init of package management system
   include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
   tags: system_pm_init
 
-- name: install system packages if need
+- name: Install system packages if need
   ansible.builtin.package:
     name: "{{ item.pkg }}"
     state: present
@@ -90,7 +100,7 @@
   when: common_system_packages is defined and common_system_packages | length > 0
   tags: system_init,system_install
 
-- name: edit any system config
+- name: Edit any system config
   ansible.builtin.lineinfile:
     path: "{{ item.path }}"
     regexp: "{{ item.regexp | default(omit) }}"
@@ -102,7 +112,7 @@
   loop: "{{ common_system_config }}"
   tags: system_init,system_config
 
-- name: create /etc/locale.gen
+- name: Create /etc/locale.gen
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/locale.gen.j2"
     dest: "/etc/locale.gen"
@@ -110,7 +120,7 @@
   when: ansible_os_family == "Gentoo" or ansible_os_family == "Debian"
   tags: system_init,locale_init
 
-- name: create /etc/locale.conf
+- name: Create /etc/locale.conf
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/locale.conf.j2"
     dest: "{{ lc.config_path }}"
@@ -119,16 +129,16 @@
     loop_var: lc
   tags: system_init,locale_init
 
-- name: create /etc/vconsole.conf
+- name: Create /etc/vconsole.conf
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
     dest: "/etc/vconsole.conf"
   when: common_kbd_n_cfont_settings is defined and common_kbd_n_cfont_settings | length > 0
   tags: system_init,locale_init
 
-- name: set network parameters for NetworkManager
+- name: Set network parameters for NetworkManager
   block:
-  - name: set common network parameters
+  - name: Set common network parameters
     community.general.nmcli:
       addr_gen_mode6: "{{ item.addr_gen_mode6 | default(omit) }}"
       ageingtime: "{{ item.ageingtime | default(omit) }}"
@@ -211,15 +221,15 @@
   notify: networkmanager restart
   tags: system_init,network_init
 
-- name: set timezone
+- name: Set timezone
   community.general.timezone:
     name: "{{ common_timezone }}"
   tags: system_init,timesync_init
 
 # Time sync is not need on containers
-- name: set time sync if needed
+- name: Set time sync if needed
   block:
-  - name: set timesync config file header
+  - name: Set timesync config file header
     ansible.builtin.blockinfile:
       path: "{{ common_time_config_path }}"
       insertbefore: "BOF"
@@ -228,7 +238,7 @@
         # File "{{ common_time_config_path }}"
         # managed by ansible. You shouldn't edit it manually
     tags: system_init,timesync_init
-  - name: edit time sync config
+  - name: Edit time sync config
     ansible.builtin.lineinfile:
       path: "{{ common_time_config_path }}"
       state: present
@@ -242,9 +252,9 @@
     tags: system_init,timesync_init
   when: common_timesync_service != 'none'
 
-- name: set resolver settings if needed
+- name: Set resolver settings if needed
   block:
-  - name: set header of resolver config file
+  - name: Set header of resolver config file
     ansible.builtin.blockinfile:
       path: "{{ common_resolver_config }}"
       insertbefore: "BOF"
@@ -260,18 +270,18 @@
       state: present
     loop: "{{ common_resolver_params }}"
     tags: system_init,resolver_init
-  - name: set systemd resolver settings
+  - name: Set systemd resolver settings
     block:
-    - name: check if systemd-resolved is started
+    - name: Check if systemd-resolved is started
       ansible.builtin.service:
         name: "systemd-resolved"
         state: "started"
-    - name: delete /etc/resolv.conf
+    - name: Delete /etc/resolv.conf
       ansible.builtin.file:
         path: /etc/resolv.conf
         state: absent
       tags: system_init,resolver_init
-    - name: set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
+    - name: Set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
       ansible.builtin.file:
         path: /etc/resolv.conf
         src: /run/systemd/resolve/stub-resolv.conf
@@ -283,23 +293,23 @@
     when: common_resolver == 'systemd-resolved'
   when: common_resolver != 'none'
 
-- name: install all packages
+- name: Install all packages
   include_tasks: "{{ ansible_pkg_mgr }}.yml"
   tags: common_world_install,common_install
 
-- name: setup selsigned CA
+- name: Setup selsigned CA
   block:
-  - name: create selfsigned SSL CA
+  - name: Create selfsigned SSL CA
     block:
-    - name: check if CA private key dir exists
+    - name: Check if CA private key dir exists
       ansible.builtin.file:
         path: "{{ common_ssl_private_keys_dir }}"
         state: directory
-    - name: check if CA dir exists
+    - name: Check if CA dir exists
       ansible.builtin.file:
         path: "{{ common_ssl_certs_dir }}"
         state: directory
-    - name: create CA private key
+    - name: Create CA private key
       community.crypto.openssl_privatekey:
         path: "{{ common_ssl_CA_pkey }}"
         owner: 'root'
@@ -307,7 +317,7 @@
         mode: 0600
         return_content: true
       register: ssl_CA_pk_var
-    - name: create CA Certificate Signing Request
+    - name: Create CA Certificate Signing Request
       community.crypto.openssl_csr:
         path: "{{ common_ssl_CA_csr }}"
         privatekey_path: "{{ common_ssl_CA_pkey }}"
@@ -321,7 +331,7 @@
         organization_name: "{{ common_ssl_organization_name | default(omit) }}"
         organizational_unit_name: "{{ common_ssl_organizational_unit_name | default(omit) }}"
         subject_alt_name: "{{ common_ssl_subject_alt_name | default(omit) }}"
-    - name: create selfsigned Certificate
+    - name: Create selfsigned Certificate
       community.crypto.x509_certificate:
         path: "{{ common_ssl_CA }}"
         privatekey_path: "{{ common_ssl_CA_pkey }}"
@@ -329,20 +339,20 @@
         provider: selfsigned
         return_content: yes
       register: ssl_CA_var
-    - name: generate new DB of CA if needed
+    - name: Generate new DB of CA if needed
       ansible.builtin.command: "{{ common_ssl_ca_generate_cmd }}"
       when: common_ssl_ca_generate_cmd and common_ssl_ca_generate_cmd | length > 0
-    - name: check if common_local_store directory exists
+    - name: Check if common_local_store directory exists
       ansible.builtin.file:
         path: "{{ common_local_store }}"
         state: directory
       delegate_to: 127.0.0.1
-    - name: copy SSL CA to accessible place
+    - name: Copy SSL CA to accessible place
       ansible.builtin.copy:
         dest: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
         content: "{{ ssl_CA_var.certificate }}"
       delegate_to: 127.0.0.1
-    - name: copy SSL CA private key to accessible place
+    - name: Copy SSL CA private key to accessible place
       ansible.builtin.copy:
         dest: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
         content: "{{ ssl_CA_pk_var.privatekey }}"
@@ -350,7 +360,7 @@
     when: common_full_hostname == common_primary_dc
     tags: system_init,ssl_ca
 
-  - name: copy selfsigned SSL CA and PK to other hosts
+  - name: Copy selfsigned SSL CA and PK to other hosts
     ansible.builtin.copy:
       src: "{{ item.src }}"
       dest: "{{ item.dest }}"
@@ -369,9 +379,9 @@
     tags: system_init,ssl_ca
   when: common_selfsigned_ca_enable is defined and common_selfsigned_ca_enable | bool
 
-- name: add selfmade systemd units
+- name: Add selfmade systemd units
   block:
-  - name: add systemd unit files into system
+  - name: Add systemd unit files into system
     ansible.builtin.template:
       src: "{{ systemd_service.template_path | default(common_init_templates_path) }}/{{ systemd_service.template_name | default('systemd_unit') }}.{{ systemd_service.task | default('service') }}.j2"
       dest: "/etc/systemd/system/{{ systemd_service.unit_name }}{% if systemd_service.instances is defined %}@{% endif %}.{{ systemd_service.task | default('service') }}"
@@ -380,13 +390,13 @@
       loop_var: systemd_service
     notify: systemd daemon reload
     tags: system_init,systemd_units
-  - name: add simple selfmade system units into boot process
+  - name: Add simple selfmade system units into boot process
     ansible.builtin.systemd_service:
       name: "{{ item.unit_name }}"
       enabled: true
     when: item.instances is not defined or item.instances | length == 0
     loop: "{{ common_systemd_units }}"
-  - name: add instantiated selfmade system units into boot process
+  - name: Add instantiated selfmade system units into boot process
     ansible.builtin.systemd_service:
       name: "{{ item.0.unit_name }}@{{ item.1 }}"
       enabled: true
@@ -395,7 +405,7 @@
   when: ansible_service_mgr == 'systemd' and common_systemd_units is defined and common_systemd_units | length > 0
   tags: system_init,systemd_units
 
-- name: add crontabs
+- name: Add crontabs
   ansible.builtin.cron:
     backup: "{{ item.backup | default(omit) }}"
     cron_file: "{{ item.user }}"
@@ -416,14 +426,14 @@
   loop: "{{ common_crontabs }}"
   tags: system_init,crontab
 
-- name: clean polkit rules directory
+- name: Clean polkit rules directory
   block:
-  - name: get list of files in /etc/polkit-1/rules.d/
+  - name: Get list of files in /etc/polkit-1/rules.d/
     ansible.builtin.find:
       paths: "/etc/polkit-1/rules.d/"
       patterns: '*.rules'
     register: files2del
-  - name: delete files
+  - name: Delete files
     ansible.builtin.file:
       path: "{{ item.path }}"
       state: absent
@@ -431,7 +441,7 @@
   when: clean_polkit_rules_dir_force is defined and clean_polkit_rules_dir_force | bool
   tags: system_init,polkit_rules_set
 
-- name: copy polkit rules
+- name: Copy polkit rules
   ansible.builtin.template:
     src: "{{ item.template_path }}/{{ item.action }}.rules.j2"
     dest: "/etc/polkit-1/rules.d/{{ item.action }}.rules"

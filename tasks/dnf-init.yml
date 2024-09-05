@@ -1,7 +1,6 @@
 ---
-
 # DNF init tasks
-- name: add proxy if it is defined
+- name: Add proxy if it is defined
   ansible.builtin.lineinfile:
     path: /etc/dnf/dnf.conf
     line: "proxy={{ common_dnf_proxy }}"
@@ -9,7 +8,7 @@
   when: common_dnf_proxy is defined
   tags: dnf_init
 
-- name: upgrade system
+- name: Upgrade system
   ansible.builtin.dnf:
     name: '*'
     state: latest
@@ -17,13 +16,13 @@
   when: dnf_upgrade_force is defined and dnf_upgrade_force | bool
   tags: dnf_init,dnf_upgrade_system
   
-- name: install EPEL repo
+- name: Install EPEL repo
   ansible.builtin.dnf:
     name: "{{ dnf_repo_list }}"
     state: present
   tags: dnf_init,dnf_install_repo
 
-- name: install system packages
+- name: Install system packages
   ansible.builtin.dnf:
     name: "{{ dnf_system_packages }}"
     state: present
