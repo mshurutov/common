@@ -13,9 +13,10 @@
     name: '*'
     state: latest
     update_cache: true
+    update_only: true
   when: dnf_upgrade_force is defined and dnf_upgrade_force | bool
   tags: dnf_init,dnf_upgrade_system
-  
+
 - name: Install EPEL repo
   ansible.builtin.dnf:
     name: "{{ dnf_repo_list }}"

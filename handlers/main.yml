@@ -1,52 +1,52 @@
 ---
-
 # handlers file for common
-- name: rebuild locales
+- name: Rebuild locales
   community.general.locale_gen:
     name: "{{ item.locale }}"
     state: present
   loop: "{{ common_locales_list }}"
 
-- name: timesync_service restart
+- name: Timesync_service restart
   ansible.builtin.service:
     name: "{{ common_timesync_service }}"
     state: restarted
 
-- name: timesync_service enable
+- name: Timesync_service enable
   ansible.builtin.service:
     name: "{{ common_timesync_service }}"
     enabled: true
 
-- name: resolver restart
+- name: Resolver restart
   ansible.builtin.service:
     name: systemd-resolved
     state: restarted
 
-- name: resolver enable
+- name: Resolver enable
   ansible.builtin.service:
     name: systemd-resolved
     enabled: true
 
-- name: systemd daemon reload
+- name: Systemd daemon reload
   ansible.builtin.systemd_service:
     daemon_reload: true
 
-- name: networkmanager restart
+- name: Networkmanager restart
   ansible.builtin.service:
     name: NetworkManager
     state: restarted
 
-- name: cron start
+- name: Cron start
   ansible.builtin.service:
     name: "{{ common_cron_service }}"
     state: started
 
-- name: cron enable
+- name: Cron enable
   ansible.builtin.service:
     name: "{{ common_cron_service }}"
     enabled: true
-    
-- name: upload ca
-  ansible.builtin.shell:
-    cmd: "{{ common_upload_ca }}"
+
+- name: Upload ca
+  ansible.builtin.command: "{{ common_upload_ca }}"
+  register: upload_ca_out
+  changed_when: true
   when: common_upload_ca is defined and common_upload_ca | length > 0

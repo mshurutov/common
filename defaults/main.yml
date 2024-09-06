@@ -1,5 +1,4 @@
 ---
-
 # By default any settings is defined for Russian because I'm russian
 # any network variables
 common_ip4_default: "127.0.0.1"
@@ -49,17 +48,17 @@ common_locales_list:
     encoding: "CP1251"
 # list of language settings
 common_lang_settings:
-- config_path: "/etc/locale.conf"
-  comment: |
-    # File /etc/locale.conf is managed by ansible.
-    # You shouldn't edit it manually!
-  lang_settings:
-  - name: 'LC_ALL'
-    value: ''
-  - name: 'LANG'
-    value: 'ru_RU.UTF-8'
-  - name: 'LC_MESSAGES'
-    value: 'en_US.UTF-8'
+  - config_path: "/etc/locale.conf"
+    comment: |
+      # File /etc/locale.conf is managed by ansible.
+      # You shouldn't edit it manually!
+    lang_settings:
+      - name: 'LC_ALL'
+        value: ''
+      - name: 'LANG'
+        value: 'ru_RU.UTF-8'
+      - name: 'LC_MESSAGES'
+        value: 'en_US.UTF-8'
 # list of console font and keyboard settings
 common_kbd_n_cfont_settings: []
 #  - name: 'KEYMAP'
@@ -128,7 +127,7 @@ common_portage_packages_default: []
 #  - pkg: "app-eselect/eselect-repository"
 #  - pkg: "app-misc/tmux"
 #  - pkg: "app-misc/wipe"
-#  - pkg: "app-shells/bash-completion" 
+#  - pkg: "app-shells/bash-completion"
 #  - pkg: "app-vim/vim-spell-en"
 #  - pkg: "app-vim/vim-spell-ru"
 #  - pkg: "dev-util/strace"
@@ -145,7 +144,7 @@ common_portage_packages_default: []
 ##  - pkg: "sys-kernel/linux-firmware"
 #  - pkg: "sys-process/lsof"
 # All packages for install by portage (Gentoo Linux).
-#common_portage_packages_default: []
+# common_portage_packages_default: []
 #  - pkg: "app-editors/gvim"
 #  - pkg: "app-office/libreoffice"
 #  - pkg: "app-portage/cpuid2cpuflags"
@@ -193,13 +192,13 @@ portage_COMMON_FLAGS: "-mtune=generic -Os -pipe"
 # Language settings
 portage_lang_list: "ru en"
 # USE-flags
-#portage_USE_flags_system: "ipv6 gnutls gssapi hardened kerberos ldap pch threads"
-#portage_USE_flags_sysapps: "bash-completion gd icu idn lz4 lzma lzo pulseaudio vim-syntax"
-#portage_USE_flags_audio: "amr ao audiofile gme mac musepack openal opus sndfile speex wavpack"
-#portage_USE_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jbig jpeg jpeg2k \
-#	jpegxl gdk-pixbuf imlib lcms mng mspub mwaw openexr raw tiff visio vpx webp \
-#	wmf woff2 wpd wps xface xmp xpm xps zmf"
-#portage_USE_flags_multimedia: "bmff ffmpeg matroska mp4 ogg theora vcd wxp-compat x265"
+# portage_USE_flags_system: "ipv6 gnutls gssapi hardened kerberos ldap pch threads"
+# portage_USE_flags_sysapps: "bash-completion gd icu idn lz4 lzma lzo pulseaudio vim-syntax"
+# portage_USE_flags_audio: "amr ao audiofile gme mac musepack openal opus sndfile speex wavpack"
+# portage_USE_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jbig jpeg jpeg2k \
+#   jpegxl gdk-pixbuf imlib lcms mng mspub mwaw openexr raw tiff visio vpx webp \
+#   wmf woff2 wpd wps xface xmp xpm xps zmf"
+# portage_USE_flags_multimedia: "bmff ffmpeg matroska mp4 ogg theora vcd wxp-compat x265"
 # any settings are combined from default, group_all, group, host variables
 portage_SETTINGS_default:
   MAKEOPTS: "-j{{ ansible_processor_vcpus + 1 }}"
@@ -221,7 +220,7 @@ apt_system_packages_default: []
 #  - "sudo"
 #  - "p7zip"
 #  - "wipe"
-#  - "bash-completion" 
+#  - "bash-completion"
 #  - "strace"
 #  - "traceroute"
 #  - "bind9-dnsutils"
@@ -249,7 +248,7 @@ dnf_system_packages_default: []
 #  - "sudo"
 #  - "p7zip"
 #  - "wipe"
-#  - "bash-completion" 
+#  - "bash-completion"
 #  - "strace"
 #  - "traceroute"
 #  - "bind-utils"

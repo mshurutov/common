@@ -2,19 +2,21 @@
 - name: Set system repos
   ansible.builtin.template:
     dest: "/etc/apt/sources.list"
-    src: "{{ common_etc_templates_path }}/apt_sources.list.j2" 
+    src: "{{ common_etc_templates_path }}/apt_sources.list.j2"
+    mode: "0644"
   when: apt_system_repos | length > 0
   tags: apt_init,apt_set_system_repos
-    
+
 - name: Update packages cache
   ansible.builtin.apt:
-    update_cache: yes
+    update_cache: true
   tags: apt_init,apt_update_cache
 
 - name: Upgrade system
   ansible.builtin.apt:
     name: "*"
     state: latest
+    only_upgrade: true
   when: apt_upgrade_force is defined and apt_upgrade_force | bool
   tags: apt_init,apt_upgrade_system
 

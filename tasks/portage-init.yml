@@ -3,18 +3,20 @@
   ansible.builtin.shell: eselect profile list | grep \* | sed -e 's/\]\|\[\|\*\|([^)]*)\|^\s*//g'
   register: current_profile
   ignore_errors: true
-  check_mode: no
+  check_mode: false
+  change_when: false
   tags: portage_init,portage_set_profile
 
 # If you want to see current and defined profiles uncomment follow block
-#- name: show current profile
+# - name: show current profile
 #  debug:
-#    msg: 
+#    msg:
 #    - "Cur profile: {{ current_profile.stdout }}"
 #    - "New profile: {{ portage_profile }}"
 #  tags: portage_init,portage_set_profile
 - name: Set profile
-  ansible.builtin.shell: "eselect profile set {{ portage_profile }}"
+  ansible.builtin.shell: eselect profile set {{ portage_profile }}
+  change_when: portage_profile not in current_profile.stdout
   when: portage_profile not in current_profile.stdout
   tags: portage_init,portage_set_profile
 
@@ -34,6 +36,7 @@
     dest: "/etc/portage/{{ item.path | regex_replace('.j2') }}"
     owner: root
     group: root
+    mode: "0644"
   with_community.general.filetree: "{{ portage_etc_templates_dir }}"
   when: item.state == 'file'
   tags: portage_init,portage_copy_configs
@@ -42,80 +45,92 @@
   ansible.builtin.blockinfile:
     path: "/etc/portage/repos.conf/local.conf"
     create: true
+    mode: "0644"
     block: |
       [{{ item.key }}]
-      {% for key,value in item.value.items() %}
+      {% for key, value in item.value.items() %}
       {{ key }} = {{ value }}
       {% endfor %}
   loop: "{{ portage_local_repos | dict2items }}"
   when: portage_local_repos is defined and portage_local_repos | length > 0
   tags: portage_init,portage_local_repos,portage_copy_configs
-  
+
 # Environment (files in /etc/portage/env and /etc/portage/package.env) have not
 # specific names, so it is generated from keys of portage_env dictionary
-- name: Create env/{{ item.key }}.conf file
+- name: Create env/*.conf files
   ansible.builtin.blockinfile:
     path: "/etc/portage/env/{{ item.key }}.conf"
     owner: root
     group: root
     state: present
     create: true
+    mode: "0644"
     block: |
       {% for env_line in item.value.env_vars %}
       {{ env_line }}
       {% endfor %}
-  loop: "{{ lookup('ansible.builtin.dict',portage_env,wantlist=True) }}"
+  loop: "{{ lookup('ansible.builtin.dict', portage_env, wantlist=True) }}"
   tags: portage_init,portage_env,portage_copy_configs
-- name: Create portage.env/{{ item.0.key }}.conf file
+
+- name: Create portage.env/*.conf files
   ansible.builtin.blockinfile:
     path: "/etc/portage/package.env/{{ item.key }}.conf"
     owner: root
     group: root
     state: present
     create: true
+    mode: "0644"
     block: |
       {% for pkg in item.value.pkg %}
       {{ pkg }} {{ item.key }}.conf
       {% endfor %}
-  loop: "{{ lookup('ansible.builtin.dict',portage_env,wantlist=True) }}"
+  loop: "{{ lookup('ansible.builtin.dict', portage_env, wantlist=True) }}"
   tags: portage_init,portage_env,portage_copy_configs
 
 - name: Create sets
-  block:
-  - name: Create sets dir
-    ansible.builtin.file:
-      path: "/etc/portage/sets"
-      owner: root
-      group: root
-      state: directory
-  - name: Setup user defined sets
-    ansible.builtin.blockinfile:
-      path: "/etc/portage/sets/{{ item.key }}"
-      owner: root
-      group: root
-      state: present
-      create: true
-      block: |
-        {% for pkg in item.value %}
-        {{ pkg }}
-        {% endfor %}
-    loop: "{{ lookup('ansible.builtin.dict',portage_sets,wantlist=True) }}"
   when: portage_sets is defined and portage_sets | length > 0
   tags: portage_init,portage_sets,portage_copy_configs
+  block:
+    - name: Create sets dir
+      ansible.builtin.file:
+        path: "/etc/portage/sets"
+        owner: root
+        group: root
+        mode: "0755"
+        state: directory
+    - name: Setup user defined sets
+      ansible.builtin.blockinfile:
+        path: "/etc/portage/sets/{{ item.key }}"
+        owner: root
+        group: root
+        state: present
+        create: true
+        mode: "0644"
+        block: |
+          {% for pkg in item.value %}
+          {{ pkg }}
+          {% endfor %}
+      loop: "{{ lookup('ansible.builtin.dict', portage_sets, wantlist=True) }}"
 
 - name: Create /etc/portage/savedconfig/sys-kernel/gentoo-kernel
-  ansible.builtin.shell: zcat /proc/config.gz > /etc/portage/savedconfig/sys-kernel/gentoo-kernel
   when: portage_init_force is defined and portage_init_force | bool
+  ansible.builtin.unarchive:
+    src: "/proc/config.gz"
+    dest: "/etc/portage/savedconfig/sys-kernel/gentoo-kernel"
+    creates: "/etc/portage/savedconfig/sys-kernel/gentoo-kernel"
+    remote_src: true
   tags: portage_init
-  
+
 # eix must be a part of {{ common_portage_tools }}
 - name: Install portage maintenance packages
   community.general.portage:
     package: "{{ common_portage_tools }}"
-    quiet: yes
+    quiet: true
     state: present
   tags: portage_init
 
 - name: Create eix database after install
+  when: portage_init_force is defined and portage_init_force | bool
   ansible.builtin.command: eix-update
+  change_when: true
   tags: portage_init,eix_init,eix

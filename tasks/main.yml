@@ -23,48 +23,50 @@
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
+    mode: "0755"
   loop: "{{ common_config_dirs }}"
   tags: system_init,system_config,system_config_dirs
 
 - name: Create ops user
-  block:
-  - name: Create sudo and primary group
-    ansible.builtin.group:
-      name: "{{ item.name }}"
-      gid: "{{ item.gid }}"
-    loop: "{{ common_sudo_groups }}"
-  - name: Create user
-    ansible.builtin.user:
-      append: true
-      create_home: true
-      groups:
-      - "{{ common_sudo_group }}"
-      name: "{{ common_ops_user }}"
-      uid: "{{ common_ops_uid }}"
-    tags: system_init,sys_ops_user
-  - name: Get id_rsa.pub into variable
-    ansible.builtin.set_fact:
-      local_pub_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-    tags: system_init,sys_ops_user
-  - name: Add id_rsa.pub into ops user authorized_keys
-    ansible.posix.authorized_key:
-      user: "{{ common_ops_user }}"
-      key: "{{ local_pub_key }}"
-    tags: system_init,sys_ops_user
-  - name: Check if sudoers directory exists
-    ansible.builtin.file:
-      path: "{{ common_sudoers_dir }}"
-      state: directory
-    tags: system_init,sys_ops_user
-  - name: Add ops user into sudoers
-    community.general.sudoers:
-      commands: ALL
-      group: "{{ common_sudo_group }}"
-      host: "ALL"
-      name: "ops_user_sudo"
-      nopassword: true
   tags: system_init,sys_ops_user
   when: common_ops_user is defined and common_ops_user | length > 0
+  block:
+    - name: Create sudo and primary group
+      ansible.builtin.group:
+        name: "{{ item.name }}"
+        gid: "{{ item.gid }}"
+      loop: "{{ common_sudo_groups }}"
+    - name: Create user
+      ansible.builtin.user:
+        append: true
+        create_home: true
+        groups:
+          - "{{ common_sudo_group }}"
+        name: "{{ common_ops_user }}"
+        uid: "{{ common_ops_uid }}"
+      tags: system_init,sys_ops_user
+    - name: Get id_rsa.pub into variable
+      ansible.builtin.set_fact:
+        local_pub_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+      tags: system_init,sys_ops_user
+    - name: Add id_rsa.pub into ops user authorized_keys
+      ansible.posix.authorized_key:
+        user: "{{ common_ops_user }}"
+        key: "{{ local_pub_key }}"
+      tags: system_init,sys_ops_user
+    - name: Check if sudoers directory exists
+      ansible.builtin.file:
+        path: "{{ common_sudoers_dir }}"
+        state: directory
+        mode: "0750"
+      tags: system_init,sys_ops_user
+    - name: Add ops user into sudoers
+      community.general.sudoers:
+        commands: ALL
+        group: "{{ common_sudo_group }}"
+        host: "ALL"
+        name: "ops_user_sudo"
+        nopassword: true
 
 - name: Set common_full_hostname if it is not defined
   ansible.builtin.set_fact:
@@ -89,7 +91,7 @@
   tags: system_init,hostname_init
 
 - name: Init of package management system
-  include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
+  ansible.builtin.include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
   tags: system_pm_init
 
 - name: Install system packages if need
@@ -109,6 +111,7 @@
     line: "{{ item.line }}"
     state: "{{ item.state | default('present') }}"
     create: "{{ item.create | default(true) }}"
+    mode: "{{ item.file_mode | default('0644') }}"
   loop: "{{ common_system_config }}"
   tags: system_init,system_config
 
@@ -116,6 +119,7 @@
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/locale.gen.j2"
     dest: "/etc/locale.gen"
+    mode: "0644"
   notify: rebuild locales
   when: ansible_os_family == "Gentoo" or ansible_os_family == "Debian"
   tags: system_init,locale_init
@@ -124,6 +128,7 @@
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/locale.conf.j2"
     dest: "{{ lc.config_path }}"
+    mode: "0644"
   loop: "{{ common_lang_settings }}"
   loop_control:
     loop_var: lc
@@ -133,93 +138,94 @@
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
     dest: "/etc/vconsole.conf"
+    mode: "0644"
   when: common_kbd_n_cfont_settings is defined and common_kbd_n_cfont_settings | length > 0
   tags: system_init,locale_init
 
 - name: Set network parameters for NetworkManager
-  block:
-  - name: Set common network parameters
-    community.general.nmcli:
-      addr_gen_mode6: "{{ item.addr_gen_mode6 | default(omit) }}"
-      ageingtime: "{{ item.ageingtime | default(omit) }}"
-      arp_interval: "{{ item.arp_interval | default(omit) }}"
-      arp_ip_target: "{{ item.arp_ip_target | default(omit) }}"
-      autoconnect: "{{ item.autoconnect | default(omit) }}"
-      conn_name: "{{ item.conn_name }}"
-      dhcp_client_id: "{{ item.dhcp_client_id | default(omit) }}"
-      dns4: "{{ item.dns4 | default(omit) }}"
-      dns4_ignore_auto: "{{ item.dns4_ignore_auto | default(omit) }}"
-      dns4_search: "{{ item.dns4_search | default(omit) }}"
-      dns6: "{{ item.dns6 | default(omit) }}"
-      dns6_ignore_auto: "{{ item.dns6_ignore_auto | default(omit) }}"
-      dns6_search: "{{ item.dns6_search | default(omit) }}"
-      downdelay: "{{ item.downdelay | default(omit) }}"
-      egress: "{{ item.egress | default(omit) }}"
-      flags: "{{ item.flags | default(omit) }}"
-      forwarddelay: "{{ item.forwarddelay | default(omit) }}"
-      gsm: "{{ item.gsm | default(omit) }}"
-      gw4: "{{ item.gw4 | default(omit) }}"
-      gw4_ignore_auto: "{{ item.gw4_ignore_auto | default(omit) }}"
-      gw6: "{{ item.gw6 | default(omit) }}"
-      gw6_ignore_auto: "{{ item.gw6_ignore_auto | default(omit) }}"
-      hairpin: "{{ item.hairpin | default(omit) }}"
-      hellotime: "{{ item.hellotime | default(omit) }}"
-      ifname: "{{ item.ifname | default(omit) }}"
-      ignore_unsupported_suboptions: "{{ item.ignore_unsupported_suboptions | default(omit) }}"
-      ingress: "{{ item.ingress | default(omit) }}"
-      ip4: "{{ item.ip4 | default(omit) }}"
-      ip6: "{{ item.ip6 | default(omit) }}"
-      ip_privacy6: "{{ item.ip_privacy6 | default(omit) }}"
-      ip_tunnel_dev: "{{ item.ip_tunnel_dev | default(omit) }}"
-      ip_tunnel_input_key: "{{ item.ip_tunnel_input_key | default(omit) }}"
-      ip_tunnel_local: "{{ item.ip_tunnel_local | default(omit) }}"
-      ip_tunnel_output_key: "{{ item.ip_tunnel_output_key | default(omit) }}"
-      ip_tunnel_remote: "{{ item.ip_tunnel_remote | default(omit) }}"
-      mac: "{{ item.mac | default(omit) }}"
-      macvlan: "{{ item.macvlan | default(omit) }}"
-      master: "{{ item.master | default(omit) }}"
-      maxage: "{{ item.maxage | default(omit) }}"
-      may_fail4: "{{ item.may_fail4 | default(omit) }}"
-      method4: "{{ item.method4 | default(omit) }}"
-      method6: "{{ item.method6 | default(omit) }}"
-      miimon: "{{ item.miimon | default(omit) }}"
-      mode: "{{ item.mode | default(omit) }}"
-      mtu: "{{ item.mtu | default(omit) }}"
-      never_default4: "{{ item.never_default4 | default(omit) }}"
-      path_cost: "{{ item.path_cost | default(omit) }}"
-      primary: "{{ item.primary | default(omit) }}"
-      priority: "{{ item.priority | default(omit) }}"
-      route_metric4: "{{ item.route_metric4 | default(omit) }}"
-      route_metric6: "{{ item.route_metric6 | default(omit) }}"
-      routes4: "{{ item.routes4 | default(omit) }}"
-      routes4_extended: "{{ item.routes4_extended | default(omit) }}"
-      routes6: "{{ item.routes6 | default(omit) }}"
-      routes6_extended: "{{ item.routes6_extended | default(omit) }}"
-      routing_rules4: "{{ item.routing_rules4 | default(omit) }}"
-      runner: "{{ item.runner | default(omit) }}"
-      runner_hwaddr_policy: "{{ item.runner_hwaddr_policy | default(omit) }}"
-      slavepriority: "{{ item.slavepriority | default(omit) }}"
-      ssid: "{{ item.ssid | default(omit) }}"
-      state: "{{ item.state }}"
-      stp: "{{ item.stp | default(omit) }}"
-      transport_mode: "{{ item.transport_mode | default(omit) }}"
-      type: "{{ item.type | default('ethernet') }}"
-      updelay: "{{ item.updelay | default(omit) }}"
-      vlandev: "{{ item.vlandev | default(omit) }}"
-      vlanid: "{{ item.vlanid | default(omit) }}"
-      vpn: "{{ item.vpn | default(omit) }}"
-      vxlan_id: "{{ item.vxlan_id | default(omit) }}"
-      vxlan_local: "{{ item.vxlan_local | default(omit) }}"
-      vxlan_remote: "{{ item.vxlan_remote | default(omit) }}"
-      wifi: "{{ item.wifi | default(omit) }}"
-      wifi_sec: "{{ item.wifi_sec | default(omit) }}"
-      wireguard: "{{ item.wireguard | default(omit) }}"
-      xmit_hash_policy: "{{ item.xmit_hash_policy | default(omit) }}"
-      zone: "{{ item.zone | default(omit) }}"
-    loop: "{{ common_nm_connections }}"
   when: common_network_manager == 'networkmanager'
   notify: networkmanager restart
   tags: system_init,network_init
+  block:
+    - name: Set common network parameters
+      community.general.nmcli:
+        addr_gen_mode6: "{{ item.addr_gen_mode6 | default(omit) }}"
+        ageingtime: "{{ item.ageingtime | default(omit) }}"
+        arp_interval: "{{ item.arp_interval | default(omit) }}"
+        arp_ip_target: "{{ item.arp_ip_target | default(omit) }}"
+        autoconnect: "{{ item.autoconnect | default(omit) }}"
+        conn_name: "{{ item.conn_name }}"
+        dhcp_client_id: "{{ item.dhcp_client_id | default(omit) }}"
+        dns4: "{{ item.dns4 | default(omit) }}"
+        dns4_ignore_auto: "{{ item.dns4_ignore_auto | default(omit) }}"
+        dns4_search: "{{ item.dns4_search | default(omit) }}"
+        dns6: "{{ item.dns6 | default(omit) }}"
+        dns6_ignore_auto: "{{ item.dns6_ignore_auto | default(omit) }}"
+        dns6_search: "{{ item.dns6_search | default(omit) }}"
+        downdelay: "{{ item.downdelay | default(omit) }}"
+        egress: "{{ item.egress | default(omit) }}"
+        flags: "{{ item.flags | default(omit) }}"
+        forwarddelay: "{{ item.forwarddelay | default(omit) }}"
+        gsm: "{{ item.gsm | default(omit) }}"
+        gw4: "{{ item.gw4 | default(omit) }}"
+        gw4_ignore_auto: "{{ item.gw4_ignore_auto | default(omit) }}"
+        gw6: "{{ item.gw6 | default(omit) }}"
+        gw6_ignore_auto: "{{ item.gw6_ignore_auto | default(omit) }}"
+        hairpin: "{{ item.hairpin | default(omit) }}"
+        hellotime: "{{ item.hellotime | default(omit) }}"
+        ifname: "{{ item.ifname | default(omit) }}"
+        ignore_unsupported_suboptions: "{{ item.ignore_unsupported_suboptions | default(omit) }}"
+        ingress: "{{ item.ingress | default(omit) }}"
+        ip4: "{{ item.ip4 | default(omit) }}"
+        ip6: "{{ item.ip6 | default(omit) }}"
+        ip_privacy6: "{{ item.ip_privacy6 | default(omit) }}"
+        ip_tunnel_dev: "{{ item.ip_tunnel_dev | default(omit) }}"
+        ip_tunnel_input_key: "{{ item.ip_tunnel_input_key | default(omit) }}"
+        ip_tunnel_local: "{{ item.ip_tunnel_local | default(omit) }}"
+        ip_tunnel_output_key: "{{ item.ip_tunnel_output_key | default(omit) }}"
+        ip_tunnel_remote: "{{ item.ip_tunnel_remote | default(omit) }}"
+        mac: "{{ item.mac | default(omit) }}"
+        macvlan: "{{ item.macvlan | default(omit) }}"
+        master: "{{ item.master | default(omit) }}"
+        maxage: "{{ item.maxage | default(omit) }}"
+        may_fail4: "{{ item.may_fail4 | default(omit) }}"
+        method4: "{{ item.method4 | default(omit) }}"
+        method6: "{{ item.method6 | default(omit) }}"
+        miimon: "{{ item.miimon | default(omit) }}"
+        mode: "{{ item.mode | default(omit) }}"
+        mtu: "{{ item.mtu | default(omit) }}"
+        never_default4: "{{ item.never_default4 | default(omit) }}"
+        path_cost: "{{ item.path_cost | default(omit) }}"
+        primary: "{{ item.primary | default(omit) }}"
+        priority: "{{ item.priority | default(omit) }}"
+        route_metric4: "{{ item.route_metric4 | default(omit) }}"
+        route_metric6: "{{ item.route_metric6 | default(omit) }}"
+        routes4: "{{ item.routes4 | default(omit) }}"
+        routes4_extended: "{{ item.routes4_extended | default(omit) }}"
+        routes6: "{{ item.routes6 | default(omit) }}"
+        routes6_extended: "{{ item.routes6_extended | default(omit) }}"
+        routing_rules4: "{{ item.routing_rules4 | default(omit) }}"
+        runner: "{{ item.runner | default(omit) }}"
+        runner_hwaddr_policy: "{{ item.runner_hwaddr_policy | default(omit) }}"
+        slavepriority: "{{ item.slavepriority | default(omit) }}"
+        ssid: "{{ item.ssid | default(omit) }}"
+        state: "{{ item.state }}"
+        stp: "{{ item.stp | default(omit) }}"
+        transport_mode: "{{ item.transport_mode | default(omit) }}"
+        type: "{{ item.type | default('ethernet') }}"
+        updelay: "{{ item.updelay | default(omit) }}"
+        vlandev: "{{ item.vlandev | default(omit) }}"
+        vlanid: "{{ item.vlanid | default(omit) }}"
+        vpn: "{{ item.vpn | default(omit) }}"
+        vxlan_id: "{{ item.vxlan_id | default(omit) }}"
+        vxlan_local: "{{ item.vxlan_local | default(omit) }}"
+        vxlan_remote: "{{ item.vxlan_remote | default(omit) }}"
+        wifi: "{{ item.wifi | default(omit) }}"
+        wifi_sec: "{{ item.wifi_sec | default(omit) }}"
+        wireguard: "{{ item.wireguard | default(omit) }}"
+        xmit_hash_policy: "{{ item.xmit_hash_policy | default(omit) }}"
+        zone: "{{ item.zone | default(omit) }}"
+      loop: "{{ common_nm_connections }}"
 
 - name: Set timezone
   community.general.timezone:
@@ -228,182 +234,191 @@
 
 # Time sync is not need on containers
 - name: Set time sync if needed
-  block:
-  - name: Set timesync config file header
-    ansible.builtin.blockinfile:
-      path: "{{ common_time_config_path }}"
-      insertbefore: "BOF"
-      create: true
-      block: |
-        # File "{{ common_time_config_path }}"
-        # managed by ansible. You shouldn't edit it manually
-    tags: system_init,timesync_init
-  - name: Edit time sync config
-    ansible.builtin.lineinfile:
-      path: "{{ common_time_config_path }}"
-      state: present
-      regexp: '^\s*#?\s*{{ item.name }}\s*=.*'
-      line: "{{ item.name }}{% if common_timesync_service == 'systemd-timesyncd' %}={% else %} {% endif %}{{ item.value }}"
-      create: true
-    loop: "{{ common_timesync_params }}"
-    notify:
-    - timesync_service enable
-    - timesync_service restart
-    tags: system_init,timesync_init
   when: common_timesync_service != 'none'
+  block:
+    - name: Set timesync config file header
+      ansible.builtin.blockinfile:
+        path: "{{ common_time_config_path }}"
+        insertbefore: "BOF"
+        create: true
+        mode: "0644"
+        block: |
+          # File "{{ common_time_config_path }}"
+          # managed by ansible. You shouldn't edit it manually
+      tags: system_init,timesync_init
+    - name: Edit time sync config
+      ansible.builtin.lineinfile:
+        path: "{{ common_time_config_path }}"
+        state: present
+        regexp: '^\s*#?\s*{{ item.name }}\s*=.*'
+        line: "{{ item.name }}{% if common_timesync_service == 'systemd-timesyncd' %}={% else %} {% endif %}{{ item.value }}"
+        create: true
+        mode: "0644"
+      loop: "{{ common_timesync_params }}"
+      notify:
+        - timesync_service enable
+        - timesync_service restart
+      tags: system_init,timesync_init
 
 - name: Set resolver settings if needed
-  block:
-  - name: Set header of resolver config file
-    ansible.builtin.blockinfile:
-      path: "{{ common_resolver_config }}"
-      insertbefore: "BOF"
-      block: |
-        # File {{ common_resolver_config }}
-        # managed by ansible. You shouldn't edit it manually
-    tags: system_init,resolver_init
-  - name: Set params in resolver config file
-    ansible.builtin.lineinfile:
-      path: "{{ common_resolver_config }}"
-      regexp: '^#?\s*{{ item.name }}\s*=.*'
-      line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}={% else %} {% endif %}{{ item.value }}"
-      state: present
-    loop: "{{ common_resolver_params }}"
-    tags: system_init,resolver_init
-  - name: Set systemd resolver settings
-    block:
-    - name: Check if systemd-resolved is started
-      ansible.builtin.service:
-        name: "systemd-resolved"
-        state: "started"
-    - name: Delete /etc/resolv.conf
-      ansible.builtin.file:
-        path: /etc/resolv.conf
-        state: absent
-      tags: system_init,resolver_init
-    - name: Set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
-      ansible.builtin.file:
-        path: /etc/resolv.conf
-        src: /run/systemd/resolve/stub-resolv.conf
-        state: link
-      notify:
-      - resolver enable
-      - resolver restart
-      tags: system_init,resolver_init
-    when: common_resolver == 'systemd-resolved'
   when: common_resolver != 'none'
+  block:
+    - name: Set header of resolver config file
+      ansible.builtin.blockinfile:
+        path: "{{ common_resolver_config }}"
+        insertbefore: "BOF"
+        block: |
+          # File {{ common_resolver_config }}
+          # managed by ansible. You shouldn't edit it manually
+      tags: system_init,resolver_init
+    - name: Set params in resolver config file
+      ansible.builtin.lineinfile:
+        path: "{{ common_resolver_config }}"
+        regexp: '^#?\s*{{ item.name }}\s*=.*'
+        line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}={% else %} {% endif %}{{ item.value }}"
+        state: present
+      loop: "{{ common_resolver_params }}"
+      tags: system_init,resolver_init
+    - name: Set systemd resolver settings
+      when: common_resolver == 'systemd-resolved'
+      block:
+        - name: Check if systemd-resolved is started
+          ansible.builtin.service:
+            name: "systemd-resolved"
+            state: "started"
+        - name: Delete /etc/resolv.conf
+          ansible.builtin.file:
+            path: /etc/resolv.conf
+            state: absent
+          tags: system_init,resolver_init
+        - name: Set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
+          ansible.builtin.file:
+            path: /etc/resolv.conf
+            src: /run/systemd/resolve/stub-resolv.conf
+            state: link
+          notify:
+            - resolver enable
+            - resolver restart
+          tags: system_init,resolver_init
 
 - name: Install all packages
-  include_tasks: "{{ ansible_pkg_mgr }}.yml"
+  ansible.builtin.include_tasks: "{{ ansible_pkg_mgr }}.yml"
   tags: common_world_install,common_install
 
 - name: Setup selsigned CA
-  block:
-  - name: Create selfsigned SSL CA
-    block:
-    - name: Check if CA private key dir exists
-      ansible.builtin.file:
-        path: "{{ common_ssl_private_keys_dir }}"
-        state: directory
-    - name: Check if CA dir exists
-      ansible.builtin.file:
-        path: "{{ common_ssl_certs_dir }}"
-        state: directory
-    - name: Create CA private key
-      community.crypto.openssl_privatekey:
-        path: "{{ common_ssl_CA_pkey }}"
-        owner: 'root'
-        group: 'root'
-        mode: 0600
-        return_content: true
-      register: ssl_CA_pk_var
-    - name: Create CA Certificate Signing Request
-      community.crypto.openssl_csr:
-        path: "{{ common_ssl_CA_csr }}"
-        privatekey_path: "{{ common_ssl_CA_pkey }}"
-        basic_constraints:
-        - 'CA:TRUE'
-        basic_constraints_critical: true
-        country_name: "{{ common_country_name }}"
-        locality_name: "{{ common_ssl_locality_name | default(omit) }}"
-        common_name: "{{ common_ssl_common_name }}"
-        email_address: "{{ common_ssl_owner_email_address }}"
-        organization_name: "{{ common_ssl_organization_name | default(omit) }}"
-        organizational_unit_name: "{{ common_ssl_organizational_unit_name | default(omit) }}"
-        subject_alt_name: "{{ common_ssl_subject_alt_name | default(omit) }}"
-    - name: Create selfsigned Certificate
-      community.crypto.x509_certificate:
-        path: "{{ common_ssl_CA }}"
-        privatekey_path: "{{ common_ssl_CA_pkey }}"
-        csr_path: "{{ common_ssl_CA_csr }}"
-        provider: selfsigned
-        return_content: yes
-      register: ssl_CA_var
-    - name: Generate new DB of CA if needed
-      ansible.builtin.command: "{{ common_ssl_ca_generate_cmd }}"
-      when: common_ssl_ca_generate_cmd and common_ssl_ca_generate_cmd | length > 0
-    - name: Check if common_local_store directory exists
-      ansible.builtin.file:
-        path: "{{ common_local_store }}"
-        state: directory
-      delegate_to: 127.0.0.1
-    - name: Copy SSL CA to accessible place
-      ansible.builtin.copy:
-        dest: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
-        content: "{{ ssl_CA_var.certificate }}"
-      delegate_to: 127.0.0.1
-    - name: Copy SSL CA private key to accessible place
-      ansible.builtin.copy:
-        dest: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
-        content: "{{ ssl_CA_pk_var.privatekey }}"
-      delegate_to: 127.0.0.1
-    when: common_full_hostname == common_primary_dc
-    tags: system_init,ssl_ca
-
-  - name: Copy selfsigned SSL CA and PK to other hosts
-    ansible.builtin.copy:
-      src: "{{ item.src }}"
-      dest: "{{ item.dest }}"
-      mode: "{{ item.mode }}"
-      owner: root
-      group: root
-    loop:
-    - src: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
-      dest: "{{ common_ssl_CA }}"
-      mode: "0644"
-    - src: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
-      dest: "{{ common_ssl_CA_pkey }}"
-      mode: "0600"
-    notify: upload ca
-    when: common_full_hostname != common_primary_dc
-    tags: system_init,ssl_ca
   when: common_selfsigned_ca_enable is defined and common_selfsigned_ca_enable | bool
+  block:
+    - name: Create selfsigned SSL CA
+      when: common_full_hostname == common_primary_dc
+      tags: system_init,ssl_ca
+      block:
+        - name: Check if CA private key dir exists
+          ansible.builtin.file:
+            path: "{{ common_ssl_private_keys_dir }}"
+            state: directory
+            mode: "0700"
+        - name: Check if CA dir exists
+          ansible.builtin.file:
+            path: "{{ common_ssl_certs_dir }}"
+            state: directory
+            mode: "0755"
+        - name: Create CA private key
+          community.crypto.openssl_privatekey:
+            path: "{{ common_ssl_CA_pkey }}"
+            owner: 'root'
+            group: 'root'
+            mode: "0600"
+            return_content: true
+          register: ssl_CA_pk_var
+        - name: Create CA Certificate Signing Request
+          community.crypto.openssl_csr:
+            path: "{{ common_ssl_CA_csr }}"
+            privatekey_path: "{{ common_ssl_CA_pkey }}"
+            basic_constraints:
+              - 'CA:TRUE'
+            basic_constraints_critical: true
+            country_name: "{{ common_country_name }}"
+            locality_name: "{{ common_ssl_locality_name | default(omit) }}"
+            common_name: "{{ common_ssl_common_name }}"
+            email_address: "{{ common_ssl_owner_email_address }}"
+            organization_name: "{{ common_ssl_organization_name | default(omit) }}"
+            organizational_unit_name: "{{ common_ssl_organizational_unit_name | default(omit) }}"
+            subject_alt_name: "{{ common_ssl_subject_alt_name | default(omit) }}"
+        - name: Create selfsigned Certificate
+          community.crypto.x509_certificate:
+            path: "{{ common_ssl_CA }}"
+            privatekey_path: "{{ common_ssl_CA_pkey }}"
+            csr_path: "{{ common_ssl_CA_csr }}"
+            provider: selfsigned
+            return_content: true
+          register: ssl_CA_var
+        - name: Generate new DB of CA if needed
+          ansible.builtin.command: "{{ common_ssl_ca_generate_cmd }}"
+          change_when: true
+          when: common_ssl_ca_generate_cmd and common_ssl_ca_generate_cmd | length > 0
+        - name: Check if common_local_store directory exists
+          ansible.builtin.file:
+            path: "{{ common_local_store }}"
+            state: directory
+            mode: "0644"
+          delegate_to: 127.0.0.1
+        - name: Copy SSL CA to accessible place
+          ansible.builtin.copy:
+            dest: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
+            content: "{{ ssl_CA_var.certificate }}"
+            mode: "0644"
+          delegate_to: 127.0.0.1
+        - name: Copy SSL CA private key to accessible place
+          ansible.builtin.copy:
+            dest: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
+            content: "{{ ssl_CA_pk_var.privatekey }}"
+            mode: "0644"
+          delegate_to: 127.0.0.1
+
+    - name: Copy selfsigned SSL CA and PK to other hosts
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: "{{ item.mode }}"
+        owner: root
+        group: root
+      loop:
+        - src: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
+          dest: "{{ common_ssl_CA }}"
+          mode: "0644"
+        - src: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
+          dest: "{{ common_ssl_CA_pkey }}"
+          mode: "0600"
+      notify: upload ca
+      when: common_full_hostname != common_primary_dc
+      tags: system_init,ssl_ca
 
 - name: Add selfmade systemd units
-  block:
-  - name: Add systemd unit files into system
-    ansible.builtin.template:
-      src: "{{ systemd_service.template_path | default(common_init_templates_path) }}/{{ systemd_service.template_name | default('systemd_unit') }}.{{ systemd_service.task | default('service') }}.j2"
-      dest: "/etc/systemd/system/{{ systemd_service.unit_name }}{% if systemd_service.instances is defined %}@{% endif %}.{{ systemd_service.task | default('service') }}"
-    loop: "{{ common_systemd_units }}"
-    loop_control:
-      loop_var: systemd_service
-    notify: systemd daemon reload
-    tags: system_init,systemd_units
-  - name: Add simple selfmade system units into boot process
-    ansible.builtin.systemd_service:
-      name: "{{ item.unit_name }}"
-      enabled: true
-    when: item.instances is not defined or item.instances | length == 0
-    loop: "{{ common_systemd_units }}"
-  - name: Add instantiated selfmade system units into boot process
-    ansible.builtin.systemd_service:
-      name: "{{ item.0.unit_name }}@{{ item.1 }}"
-      enabled: true
-    when: item.0.instances is defined and item.0.instances | length > 0
-    loop: "{{ common_systemd_units | subelements('instances') }}"
   when: ansible_service_mgr == 'systemd' and common_systemd_units is defined and common_systemd_units | length > 0
   tags: system_init,systemd_units
+  block:
+    - name: Add systemd unit files into system
+      ansible.builtin.template:
+        src: "{{ srvc.template_path }}/{{ srvc.template_name | default('systemd_unit') }}.{{ srvc.task | default('service') }}.j2"
+        dest: "/etc/systemd/system/{{ srvc.unit_name }}{% if srvc.instances is defined %}@{% endif %}.{{ srvc.task | default('service') }}"
+        mode: "0644"
+      loop: "{{ common_systemd_units }}"
+      loop_control:
+        loop_var: srvc
+      notify: systemd daemon reload
+      tags: system_init,systemd_units
+    - name: Add simple selfmade system units into boot process
+      ansible.builtin.systemd_service:
+        name: "{{ item.unit_name }}"
+        enabled: true
+      when: item.instances is not defined or item.instances | length == 0
+      loop: "{{ common_systemd_units }}"
+    - name: Add instantiated selfmade system units into boot process
+      ansible.builtin.systemd_service:
+        name: "{{ item.0.unit_name }}@{{ item.1 }}"
+        enabled: true
+      when: item.0.instances is defined and item.0.instances | length > 0
+      loop: "{{ common_systemd_units | subelements('instances') }}"
 
 - name: Add crontabs
   ansible.builtin.cron:
@@ -427,24 +442,25 @@
   tags: system_init,crontab
 
 - name: Clean polkit rules directory
-  block:
-  - name: Get list of files in /etc/polkit-1/rules.d/
-    ansible.builtin.find:
-      paths: "/etc/polkit-1/rules.d/"
-      patterns: '*.rules'
-    register: files2del
-  - name: Delete files
-    ansible.builtin.file:
-      path: "{{ item.path }}"
-      state: absent
-    loop: "{{ files2del.files }}"
   when: clean_polkit_rules_dir_force is defined and clean_polkit_rules_dir_force | bool
   tags: system_init,polkit_rules_set
+  block:
+    - name: Get list of files in /etc/polkit-1/rules.d/
+      ansible.builtin.find:
+        paths: "/etc/polkit-1/rules.d/"
+        patterns: '*.rules'
+      register: files2del
+    - name: Delete files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ files2del.files }}"
 
 - name: Copy polkit rules
+  when: common_polkit_rules | length > 0
+  tags: system_init,polkit_rules_set
   ansible.builtin.template:
     src: "{{ item.template_path }}/{{ item.action }}.rules.j2"
     dest: "/etc/polkit-1/rules.d/{{ item.action }}.rules"
+    mode: "0644"
   loop: "{{ common_polkit_rules }}"
-  when: common_polkit_rules | length > 0
-  tags: system_init,polkit_rules_set
