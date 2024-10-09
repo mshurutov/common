@@ -4,7 +4,7 @@
   register: current_profile
   ignore_errors: true
   check_mode: false
-  change_when: false
+  changed_when: false
   tags: portage_init,portage_set_profile
 
 # If you want to see current and defined profiles uncomment follow block
@@ -15,8 +15,8 @@
 #    - "New profile: {{ portage_profile }}"
 #  tags: portage_init,portage_set_profile
 - name: Set profile
-  ansible.builtin.shell: eselect profile set {{ portage_profile }}
-  change_when: portage_profile not in current_profile.stdout
+  ansible.builtin.command: eselect profile set {{ portage_profile }}
+  changed_when: portage_profile not in current_profile.stdout
   when: portage_profile not in current_profile.stdout
   tags: portage_init,portage_set_profile
 
@@ -132,5 +132,5 @@
 - name: Create eix database after install
   when: portage_init_force is defined and portage_init_force | bool
   ansible.builtin.command: eix-update
-  change_when: true
+  changed_when: true
   tags: portage_init,eix_init,eix

@@ -324,16 +324,16 @@
             mode: "0755"
         - name: Create CA private key
           community.crypto.openssl_privatekey:
-            path: "{{ common_ssl_CA_pkey }}"
+            path: "{{ common_ssl_ca_pkey }}"
             owner: 'root'
             group: 'root'
             mode: "0600"
             return_content: true
-          register: ssl_CA_pk_var
+          register: ssl_ca_pk_var
         - name: Create CA Certificate Signing Request
           community.crypto.openssl_csr:
-            path: "{{ common_ssl_CA_csr }}"
-            privatekey_path: "{{ common_ssl_CA_pkey }}"
+            path: "{{ common_ssl_ca_csr }}"
+            privatekey_path: "{{ common_ssl_ca_pkey }}"
             basic_constraints:
               - 'CA:TRUE'
             basic_constraints_critical: true
@@ -346,15 +346,15 @@
             subject_alt_name: "{{ common_ssl_subject_alt_name | default(omit) }}"
         - name: Create selfsigned Certificate
           community.crypto.x509_certificate:
-            path: "{{ common_ssl_CA }}"
-            privatekey_path: "{{ common_ssl_CA_pkey }}"
-            csr_path: "{{ common_ssl_CA_csr }}"
+            path: "{{ common_ssl_ca }}"
+            privatekey_path: "{{ common_ssl_ca_pkey }}"
+            csr_path: "{{ common_ssl_ca_csr }}"
             provider: selfsigned
             return_content: true
-          register: ssl_CA_var
+          register: ssl_ca_var
         - name: Generate new DB of CA if needed
           ansible.builtin.command: "{{ common_ssl_ca_generate_cmd }}"
-          change_when: true
+          changed_when: true
           when: common_ssl_ca_generate_cmd and common_ssl_ca_generate_cmd | length > 0
         - name: Check if common_local_store directory exists
           ansible.builtin.file:
@@ -365,13 +365,13 @@
         - name: Copy SSL CA to accessible place
           ansible.builtin.copy:
             dest: "{{ common_local_store }}/{{ common_domain_name }}-ssl-ca.pem"
-            content: "{{ ssl_CA_var.certificate }}"
+            content: "{{ ssl_ca_var.certificate }}"
             mode: "0644"
           delegate_to: 127.0.0.1
         - name: Copy SSL CA private key to accessible place
           ansible.builtin.copy:
             dest: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
-            content: "{{ ssl_CA_pk_var.privatekey }}"
+            content: "{{ ssl_ca_pk_var.privatekey }}"
             mode: "0644"
           delegate_to: 127.0.0.1
 
@@ -387,7 +387,7 @@
           dest: "{{ common_ssl_CA }}"
           mode: "0644"
         - src: "{{ common_local_store }}/{{ common_domain_name }}-private.pem"
-          dest: "{{ common_ssl_CA_pkey }}"
+          dest: "{{ common_ssl_ca_pkey }}"
           mode: "0600"
       notify: Upload ca
       when: common_full_hostname != common_primary_dc

@@ -20,9 +20,9 @@ common_ssl_owner_email_address: "admin@example.com"
 common_ssl_common_name: "{{ common_domain_name }}"
 common_ssl_private_keys_dir: "/etc/ssl/private"
 common_ssl_certs_dir: "/etc/ssl/certs"
-common_ssl_CA_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.pem"
-common_ssl_CA_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.csr"
-common_ssl_CA: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ssl-ca.pem"
+common_ssl_ca_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.pem"
+common_ssl_ca_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.csr"
+common_ssl_ca: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ssl-ca.pem"
 # Any system configs settings
 common_system_config_default: []
 #  disable speaker for error key typing

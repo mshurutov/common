@@ -1,56 +1,56 @@
 ---
-portage_SETTINGS: "{{
-  portage_SETTINGS_default |
-  combine(portage_SETTINGS_group_all | default({}),
-    portage_SETTINGS_supgroup | default({}),
-    portage_SETTINGS_group | default({}),
-    portage_SETTINGS_subgroup | default({}),
-    portage_SETTINGS_host | default({}),
+portage_settings: "{{
+  portage_settings_default |
+  combine(portage_settings_group_all | default({}),
+    portage_settings_supgroup | default({}),
+    portage_settings_group | default({}),
+    portage_settings_subgroup | default({}),
+    portage_settings_host | default({}),
     list_merge='append_rp')
   | dict2items(key_name='name', value_name='value')
 }}"
-portage_ACCEPT_KEYWORDS_list: "{{
-  [portage_ACCEPT_KEYWORDS_list_group_all | default([]),
-    portage_ACCEPT_KEYWORDS_list_supgroup | default([]),
-    portage_ACCEPT_KEYWORDS_list_group | default([]),
-    portage_ACCEPT_KEYWORDS_list_subgroup | default([]),
-    portage_ACCEPT_KEYWORDS_list_host | default([])] |
+portage_accept_keywords_list: "{{
+  [portage_accept_keywords_list_group_all | default([]),
+    portage_accept_keywords_list_supgroup | default([]),
+    portage_accept_keywords_list_group | default([]),
+    portage_accept_keywords_list_subgroup | default([]),
+    portage_accept_keywords_list_host | default([])] |
   community.general.lists_mergeby('pkg', list_merge='append_rp') |
   sort(attribute='pkg')
 }}"
-portage_LICENSE_list: "{{
-  [portage_LICENSE_list_group_all | default([]),
-    portage_LICENSE_list_supgroup | default([]),
-    portage_LICENSE_list_group | default([]),
-    portage_LICENSE_list_subgroup | default([]),
-    portage_LICENSE_list_host | default([])] |
+portage_license_list: "{{
+  [portage_license_list_group_all | default([]),
+    portage_license_list_supgroup | default([]),
+    portage_license_list_group | default([]),
+    portage_license_list_subgroup | default([]),
+    portage_license_list_host | default([])] |
   community.general.lists_mergeby('pkg', list_merge='append_rp') |
   sort(attribute='pkg')
 }}"
-portage_MASK_list: "{{
-  [portage_MASK_list_group_all | default([]),
-    portage_MASK_list_supgroup | default([]),
-    portage_MASK_list_group | default([]),
-    portage_MASK_list_subgroup | default([]),
-    portage_MASK_list_host | default([])] |
+portage_mask_list: "{{
+  [portage_mask_list_group_all | default([]),
+    portage_mask_list_supgroup | default([]),
+    portage_mask_list_group | default([]),
+    portage_mask_list_subgroup | default([]),
+    portage_mask_list_host | default([])] |
   community.general.lists_mergeby('pkg', list_merge='append_rp') |
   sort(attribute='pkg')
 }}"
-portage_UNMASK_list: "{{
-  [portage_UNMASK_list_group_all | default([]),
-    portage_UNMASK_list_supgroup | default([]),
-    portage_UNMASK_list_group | default([]),
-    portage_UNMASK_list_subgroup | default([]),
-    portage_UNMASK_list_host | default([])] |
+portage_unmask_list: "{{
+  [portage_unmask_list_group_all | default([]),
+    portage_unmask_list_supgroup | default([]),
+    portage_unmask_list_group | default([]),
+    portage_unmask_list_subgroup | default([]),
+    portage_unmask_list_host | default([])] |
   community.general.lists_mergeby('pkg', list_merge='append_rp') |
   sort(attribute='pkg')
 }}"
-portage_USE_list: "{{
-  [portage_USE_list_group_all | default([]),
-    portage_USE_list_supgroup | default([]),
-    portage_USE_list_group | default([]),
-    portage_USE_list_subgroup | default([]),
-    portage_USE_list_host | default([])] |
+portage_use_list: "{{
+  [portage_use_list_group_all | default([]),
+    portage_use_list_supgroup | default([]),
+    portage_use_list_group | default([]),
+    portage_use_list_subgroup | default([]),
+    portage_use_list_host | default([])] |
   community.general.lists_mergeby('pkg', list_merge='append_rp') |
   sort(attribute='pkg')
 }}"
