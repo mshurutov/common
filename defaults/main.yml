@@ -188,19 +188,19 @@ portage_etc_templates_dir: "{{ role_path }}/templates/etc/portage"
 # profile
 portage_profile: "default/linux/amd64/23.0/desktop/systemd"
 # make.conf settings
-portage_COMMON_FLAGS: "-mtune=generic -Os -pipe"
+portage_common_flags: "-mtune=generic -Os -pipe"
 # Language settings
 portage_lang_list: "ru en"
 # USE-flags
-# portage_USE_flags_system: "ipv6 gnutls gssapi hardened kerberos ldap pch threads"
-# portage_USE_flags_sysapps: "bash-completion gd icu idn lz4 lzma lzo pulseaudio vim-syntax"
-# portage_USE_flags_audio: "amr ao audiofile gme mac musepack openal opus sndfile speex wavpack"
-# portage_USE_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jbig jpeg jpeg2k \
+# portage_use_flags_system: "ipv6 gnutls gssapi hardened kerberos ldap pch threads"
+# portage_use_flags_sysapps: "bash-completion gd icu idn lz4 lzma lzo pulseaudio vim-syntax"
+# portage_use_flags_audio: "amr ao audiofile gme mac musepack openal opus sndfile speex wavpack"
+# portage_use_flags_images: "aalib avif corefonts djvu ebook eps epub hdri heif jbig jpeg jpeg2k \
 #   jpegxl gdk-pixbuf imlib lcms mng mspub mwaw openexr raw tiff visio vpx webp \
 #   wmf woff2 wpd wps xface xmp xpm xps zmf"
-# portage_USE_flags_multimedia: "bmff ffmpeg matroska mp4 ogg theora vcd wxp-compat x265"
+# portage_use_flags_multimedia: "bmff ffmpeg matroska mp4 ogg theora vcd wxp-compat x265"
 # any settings are combined from default, group_all, group, host variables
-portage_SETTINGS_default:
+portage_settings_default:
   MAKEOPTS: "-j{{ ansible_processor_vcpus + 1 }}"
 # By default there is feature distcc is disabled for toolchains build
 portage_env_default:
