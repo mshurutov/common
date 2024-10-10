@@ -1,31 +1,35 @@
 ---
 - name: Set system repos
+  tags: apt_init,apt_set_system_repos
+  when: apt_system_repos | length > 0
   ansible.builtin.template:
-    dest: "/etc/apt/sources.list"
+    dest: "/etc/apt/{{ item.filename }}"
     src: "{{ common_etc_templates_path }}/apt_sources.list.j2"
     mode: "0644"
-  when: apt_system_repos | length > 0
-  tags: apt_init,apt_set_system_repos
+  loop: "{{ apt_system_repos }}"
+  loop_control:
+    loop_var: asr
 
 - name: Update packages cache
+  tags: apt_init,apt_update_cache
   ansible.builtin.apt:
     update_cache: true
-  tags: apt_init,apt_update_cache
 
 - name: Upgrade system
+  when: apt_upgrade_force is defined and apt_upgrade_force | bool
+  tags: apt_init,apt_upgrade_system
   ansible.builtin.apt:
     name: "*"
     state: latest
     only_upgrade: true
-  when: apt_upgrade_force is defined and apt_upgrade_force | bool
-  tags: apt_init,apt_upgrade_system
 
 - name: Install system packages
+  tags: apt_init,system_install
   ansible.builtin.apt:
     name: "{{ apt_system_packages }}"
-  tags: apt_init,system_install
 
 - name: Set python3 default interpreter
+  tags: set_python
   community.general.alternatives:
     name: "python"
     link: "/usr/bin/python"
@@ -33,20 +37,19 @@
     priority: "{{ item.priority }}"
     state: "{{ item.state }}"
   loop: "{{ apt_python }}"
-  tags: set_python
 
 - name: Add repos gpg key
+  tags: apt_init,apt_add_repo
   ansible.builtin.apt_key:
     url: "{{ item.gpg_key }}"
     state: present
   loop: "{{ apt_repo_list }}"
-  tags: apt_init,apt_add_repo
 
 - name: Add repos
+  tags: apt_init,apt_add_repo
   ansible.builtin.apt_repository:
     codename: "{{ item.codename }}"
     repo: "{{ item.repo }}"
     filename: "{{ item.filename }}"
     state: "{{ item.state | default(omit) }}"
   loop: "{{ apt_repo_list }}"
-  tags: apt_init,apt_add_repo
