@@ -1,6 +1,6 @@
 # file /etc/apt/sources.list[.d/*list] is managed by ansible
 # DON'T edit this file manually
 
-{% for repo_record in asr.records %}
+{% for repo_record in arl.repo %}
 {{ repo_record }}
 {% endfor %}

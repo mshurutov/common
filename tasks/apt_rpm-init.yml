@@ -2,9 +2,9 @@
 # apt+rpm init file
 - name: Add repos
   ansible.builtin.template:
-    dest: "/etc/apt/{{ item.filename }}"
+    dest: "/etc/apt/sources.list.d/{{ item.filename }}"
     mode: "0644"
-    src: "{{ common_templates_path }}/apt_sources.list.j2 }}"
+    src: "{{ common_templates_path }}/apt_sources.list.j2"
   loop: "{{ apt_system_repos }}"
   loop_control:
-    loop_var: asr
+    loop_var: arl

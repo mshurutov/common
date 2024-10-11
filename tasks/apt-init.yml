@@ -3,12 +3,12 @@
   tags: apt_init,apt_set_system_repos
   when: apt_system_repos | length > 0
   ansible.builtin.template:
-    dest: "/etc/apt/{{ item.filename }}"
+    dest: "/etc/apt/sources.list"
     src: "{{ common_etc_templates_path }}/apt_sources.list.j2"
     mode: "0644"
   loop: "{{ apt_system_repos }}"
   loop_control:
-    loop_var: asr
+    loop_var: arl
 
 - name: Update packages cache
   tags: apt_init,apt_update_cache
@@ -48,7 +48,7 @@
 - name: Add repos
   tags: apt_init,apt_add_repo
   ansible.builtin.apt_repository:
-    codename: "{{ item.codename }}"
+    codename: "{{ item.codename | default(omit) }}"
     repo: "{{ item.repo }}"
     filename: "{{ item.filename }}"
     state: "{{ item.state | default(omit) }}"
