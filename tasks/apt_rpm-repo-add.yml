@@ -1,15 +1,17 @@
 ---
 - name: Add repos
-  tags: apt_rpm_init,apt_rpm_addrepo
-  ansible.builtin.template:
-    dest: "/etc/apt/sources.list.d/{{ arl.filename }}.list"
-    mode: "0644"
-    src: "{{ common_templates_path }}/apt_sources.list.j2"
-  loop: "{{ apt_system_repos }}"
-  loop_control:
-    loop_var: arl
-
-- name: Update cache after update
-  tags: apt_rpm_init,apt_rpm_addrepo
-  community.general.apt_rpm:
-    update_cache: true
+  when: apt_system_repos is defined and apt_system_repos | length > 0
+  block:
+    - name: Add repos for apt+rpm
+      tags: apt_rpm_init,apt_rpm_addrepo
+      ansible.builtin.template:
+        dest: "/etc/apt/sources.list.d/{{ arl.filename }}.list"
+        mode: "0644"
+        src: "{{ common_templates_path }}/apt_sources.list.j2"
+      loop: "{{ apt_system_repos }}"
+      loop_control:
+        loop_var: arl
+    - name: Update cache after update
+      tags: apt_rpm_init,apt_rpm_addrepo
+      community.general.apt_rpm:
+        update_cache: true
