@@ -1,7 +1,0 @@
----
-- name: Converge
-  hosts: all
-  tasks:
-    - name: "Include common"
-      ansible.builtin.include_role:
-        name: "mshurutov.common"

@@ -1,0 +1,21 @@
+---
+- name: Add repos gpg key
+  tags: apt_init,apt_add_repo
+  ansible.builtin.apt_key:
+    url: "{{ item.gpg_key }}"
+    state: present
+  loop: "{{ apt_repo_list }}"
+
+- name: Add repos
+  tags: apt_init,apt_add_repo
+  ansible.builtin.apt_repository:
+    codename: "{{ item.codename | default(omit) }}"
+    repo: "{{ item.repo }}"
+    filename: "{{ item.filename }}"
+    state: "{{ item.state | default(omit) }}"
+  loop: "{{ apt_repo_list }}"
+
+- name: Update packages cache
+  tags: apt_init,apt_update_cache,apt_add_repo
+  ansible.builtin.apt:
+    update_cache: true
