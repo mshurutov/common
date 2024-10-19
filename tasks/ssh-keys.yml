@@ -19,18 +19,6 @@
     owner: "{{ common_user_sk }}"
     mode: "0700"
 
-- name: Create temp dir for create ssh keys
-  become: true
-  become_user: root
-  tags: ssh_keys
-  ansible.builtin.file:
-    path: "/tmp/ssh-keys"
-    state: directory
-    owner: "root"
-    group: "root"
-    mode: "0700"
-  delegate_to: 127.0.0.1
-  
 - name: Check if ssh-keys exist on target host
   become: true
   become_user: root
@@ -44,14 +32,12 @@
   ansible.builtin.stat:
     path: "{{ common_central_store }}/{{ common_full_hostname }}-{{ common_user_sk }}-id_rsa"
   register: sk_exist_central
-  
+
 - name: Generate ssh-keys for user
-  become: true
-  become_user: root
   tags: ssh_keys
   when: not sk_exist_local.stat.exists and not sk_exist_central.stat.exists
   community.crypto.openssh_keypair:
-    path: "/tmp/ssh-keys/{{ common_full_hostname }}-{{ common_user_sk }}-id_rsa"
+    path: "/var/tmp/{{ common_full_hostname }}-{{ common_user_sk }}-id_rsa"
     size: 2048
     state: present
     type: rsa
@@ -62,22 +48,32 @@
   when: not sk_exist_local.stat.exists and sk_exist_central.stat.exists
   tags: ssh_keys
   ansible.builtin.fetch:
-    dest: "/tmp/ssh-keys/"
-    src: "{{ common_central_store }}/{{ common_full_hostname }}-{{ common_user_sk }}-id_rsa"
+    dest: "/var/tmp/"
+    src: "{{ common_central_store }}/{{ common_full_hostname }}-{{ common_user_sk }}-{{ item }}"
     flat: true
     mode: "0600"
+  loop:
+    - "id_rsa"
+    - "id_rsa.pub"
 
 - name: Copy exist keys from target host to temp local dir
+  become: true
+  become_user: root
   when: sk_exist_local.stat.exists and not sk_exist_central.stat.exists
   tags: ssh_keys
   ansible.builtin.fetch:
-    dest: "/tmp/ssh-keys/"
-    src: "{{ common_central_store }}/{{ common_full_hostname }}-{{ item.item.name }}-id_rsa"
+    dest: "/var/tmp/{{ common_full_hostname }}-{{ common_user_sk }}-{{ item }}"
+    src: "{{ user_info.home }}/.ssh/{{ item }}"
+#    src: "
     flat: true
     mode: "0600"
-  loop: "{{ sk_exist_local.results }}"
-  
+  loop:
+    - "id_rsa"
+    - "id_rsa.pub"
+
 - name: Copy ssh-keys to target hosts
+  become: true
+  become_user: root
   tags: ssh_keys
   ansible.builtin.copy:
     src: "{{ item }}"
@@ -87,14 +83,25 @@
   with_fileglob: '/var/tmp/{{ common_full_hostname }}-{{ common_user_sk }}-id_rsa*'
 
 - name: Create authorized key for user
+  become: true
+  become_user: root
   tags: ssh_keys
   ansible.posix.authorized_key:
     user: "{{ common_user_sk }}"
     state: present
-    key: "{{ lookup('ansible.builtin.file', item) }}"
-  with_fileglob: '/var/tmp/*id_rsa.pub'
+    key: "{{
+      lookup('ansible.builtin.file',
+        '/var/tmp/' +
+        hostvars[item]['common_full_hostname'] +
+        '-' +
+        hostvars[item]['common_user_sk'] +
+        '-id_rsa.pub')
+    }}"
+  loop: "{{ groups[common_sk_hosts_group] }}"
 
-- name: Create known_hosts for 
+- name: Create known_hosts for user
+  become: true
+  become_user: root
   tags: ssh_keys
   ansible.builtin.known_hosts:
     hash_host: true
@@ -102,18 +109,21 @@
     name: "{{ hostvars[item.0][item.1] }}"
     key: "{{ lookup('pipe', 'ssh-keyscan -t rsa ' + hostvars[item.0][item.1]) }}"
     state: present
-  loop: "{{ groups[common_sk_hosts_group] | product(['common_short_hostname', 'common_ip4_default', 'common_full_hostname']) }}"
+  loop: "{{ groups[common_sk_hosts_group] | product(['common_ip4_default', 'common_full_hostname']) }}"
 
 - name: Set owner group and mode for known_hosts file
+  become: true
+  become_user: root
   tags: ssh_keys
   ansible.builtin.file:
     path: "{{ user_info.home }}/.ssh/known_hosts"
     owner: "{{ common_user_sk }}"
     mode: "0600"
 
-- name: Remove temp dir for create ssh keys
+- name: Delete generated files
   tags: ssh_keys
   ansible.builtin.file:
-    path: "/tmp/ssh-keys"
+    path: "{{ item }}"
     state: absent
+  with_fileglob: '/var/tmp/{{ common_full_hostname }}-{{ common_user_sk }}-id_rsa*'
   delegate_to: 127.0.0.1
