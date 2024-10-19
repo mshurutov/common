@@ -3,6 +3,8 @@
   when: apt_rpm_system_repos is defined and apt_rpm_system_repos | length > 0
   block:
     - name: Add repos for apt+rpm
+      become: true
+      become_user: root
       tags: apt_rpm_init,apt_rpm_addrepo
       ansible.builtin.template:
         dest: "/etc/apt/sources.list.d/{{ arl.filename }}.list"
@@ -12,6 +14,8 @@
       loop_control:
         loop_var: arl
     - name: Update cache after update
+      become: true
+      become_user: root
       tags: apt_rpm_init,apt_rpm_addrepo
       community.general.apt_rpm:
         update_cache: true

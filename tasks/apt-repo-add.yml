@@ -3,12 +3,16 @@
   when: apt_repo_list is defined and apt_repo_list | length > 0
   block:
     - name: Add repos gpg key
+      become: true
+      become_user: root
       tags: apt_init,apt_add_repo
       ansible.builtin.apt_key:
         url: "{{ item.gpg_key }}"
         state: present
       loop: "{{ apt_repo_list }}"
     - name: Add repos
+      become: true
+      become_user: root
       tags: apt_init,apt_add_repo
       ansible.builtin.apt_repository:
         codename: "{{ item.codename | default(omit) }}"
@@ -17,6 +21,8 @@
         state: "{{ item.state | default(omit) }}"
       loop: "{{ apt_repo_list }}"
     - name: Update packages cache
+      become: true
+      become_user: root
       tags: apt_init,apt_update_cache,apt_add_repo
       ansible.builtin.apt:
         update_cache: true
