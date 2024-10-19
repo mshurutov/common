@@ -29,6 +29,7 @@
     owner: "root"
     group: "root"
     mode: "0700"
+  delegate_to: 127.0.0.1
   
 - name: Check if ssh-keys exist on target host
   become: true
@@ -115,3 +116,4 @@
   ansible.builtin.file:
     path: "/tmp/ssh-keys"
     state: absent
+  delegate_to: 127.0.0.1
