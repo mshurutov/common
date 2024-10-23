@@ -39,4 +39,4 @@
   loop: "{{ apt_python }}"
 
 - name: Setup any repos
-  ansible.builtin.import_tasks: "apt-repo-add.yml"
+  ansible.builtin.include_tasks: "apt-repo-add.yml"
