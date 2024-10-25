@@ -1,4 +1,5 @@
 ---
 # apt+rpm init file
 - name: Setup any repos
+  tags: apt_rpm_init
   ansible.builtin.include_tasks: "apt_rpm-repo-add.yml"

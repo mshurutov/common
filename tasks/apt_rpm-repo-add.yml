@@ -1,6 +1,7 @@
 ---
 - name: Add repos
   when: apt_rpm_system_repos is defined and apt_rpm_system_repos | length > 0
+  tags: apt_rpm_add_repo
   block:
     - name: Add repos for apt+rpm
       become: true
