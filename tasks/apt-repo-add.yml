@@ -5,6 +5,7 @@
     - name: Add repos gpg key
       become: true
       become_user: root
+      when: item.gpg_key is defined and | length > 0
       tags: apt_init,apt_add_repo
       ansible.builtin.apt_key:
         url: "{{ item.gpg_key }}"
@@ -18,7 +19,7 @@
         codename: "{{ item.codename | default(omit) }}"
         repo: "{{ item.repo }}"
         filename: "{{ item.filename }}"
-        state: "{{ item.state | default(omit) }}"
+        state: "{{ item.state | default('present') }}"
       loop: "{{ apt_repo_list }}"
     - name: Update packages cache
       become: true
