@@ -1,12 +1,13 @@
 ---
 # generate and put ssh-keys on cluster hosts
-- name: Get user info
+- name: Get user info and check if common_user_sk has executable shell
   become: true
   become_user: root
   tags: ssh_keys
   ansible.builtin.user:
     name: "{{ common_user_sk }}"
     state: "present"
+    shell: "{{ common_user_sk_shell }}"
   register: user_info
 
 - name: Check if ${HOME}/.ssh dir exists
