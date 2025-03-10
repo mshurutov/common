@@ -65,7 +65,6 @@
   ansible.builtin.fetch:
     dest: "/var/tmp/{{ common_full_hostname }}-{{ common_user_sk }}-{{ item }}"
     src: "{{ user_info.home }}/.ssh/{{ item }}"
-#    src: "
     flat: true
     mode: "0600"
   loop:
@@ -100,17 +99,17 @@
     }}"
   loop: "{{ groups[common_sk_hosts_group] }}"
 
-- name: Create known_hosts for user
-  become: true
-  become_user: root
-  tags: ssh_keys
-  ansible.builtin.known_hosts:
-    hash_host: true
-    path: "{{ user_info.home }}/.ssh/known_hosts"
-    name: "{{ hostvars[item.0][item.1] }}"
-    key: "{{ lookup('pipe', 'ssh-keyscan -t rsa ' + hostvars[item.0][item.1]) }}"
-    state: present
-  loop: "{{ groups[common_sk_hosts_group] | product(['common_ip4_default', 'common_full_hostname']) }}"
+# - name: Create known_hosts for user
+#   become: true
+#   become_user: root
+#   tags: ssh_keys
+#   ansible.builtin.known_hosts:
+#     hash_host: true
+#     path: "{{ user_info.home }}/.ssh/known_hosts"
+#     name: "{{ hostvars[item.0][item.1] }}"
+#     key: "{{ lookup('pipe', 'ssh-keyscan -t rsa ' + hostvars[item.0][item.1]) }}"
+#     state: present
+#   loop: "{{ groups[common_sk_hosts_group] | product(['common_ip4_default', 'common_full_hostname']) }}"
 
 - name: Set owner group and mode for known_hosts file
   become: true
