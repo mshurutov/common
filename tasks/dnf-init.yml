@@ -18,7 +18,7 @@
     update_only: true
 
 - name: Install EPEL repo
-  tags: dnf_init,dnf_install_repo
+  tags: dnf_init,add_repo
   ansible.builtin.dnf:
     name: "{{ item }}"
     state: present

@@ -6,7 +6,7 @@
       become: true
       become_user: root
       when: item.gpg_key is defined and item.gpg_key | length > 0
-      tags: apt_init,apt_add_repo
+      tags: apt_init,add_repo
       ansible.builtin.apt_key:
         url: "{{ item.gpg_key }}"
         state: present
