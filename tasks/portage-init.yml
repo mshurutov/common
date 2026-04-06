@@ -51,8 +51,7 @@
       {% for key, value in item.value.items() %}
       {{ key }} = {{ value }}
       {% endfor %}
-  loop: "{{ portage_local_repos | dict2items }}"
-  when: portage_local_repos is defined and portage_local_repos | length > 0
+  loop: "{{ portage_local_repos | default({}) | dict2items }}"
   tags: portage_init,portage_local_repos,portage_copy_configs
 
 # Environment (files in /etc/portage/env and /etc/portage/package.env) have not

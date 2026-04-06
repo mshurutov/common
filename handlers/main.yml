@@ -46,7 +46,7 @@
     enabled: true
 
 - name: Upload ca
-  ansible.builtin.command: "{{ common_upload_ca }}"
+  when: csk.cert_is_ca is defined and csk.cert_is_ca
+  ansible.builtin.command: "{{ common_upload_ca | default('/bin/true') }}"
   register: upload_ca_out
   changed_when: true
-  when: common_upload_ca is defined and common_upload_ca | length > 0

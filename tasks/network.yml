@@ -1,0 +1,155 @@
+---
+### BEGIN: Network settings for NetworkManager ###
+- name: Set network parameters for NetworkManager
+  when: common_network_manager == 'networkmanager'
+  notify: Networkmanager restart
+  tags: system_init,network_init
+  community.general.nmcli:
+    addr_gen_mode6: "{{ item.addr_gen_mode6 | default(omit) }}"
+    ageingtime: "{{ item.ageingtime | default(omit) }}"
+    arp_interval: "{{ item.arp_interval | default(omit) }}"
+    arp_ip_target: "{{ item.arp_ip_target | default(omit) }}"
+    autoconnect: "{{ item.autoconnect | default(omit) }}"
+    conn_name: "{{ item.conn_name }}"
+    dhcp_client_id: "{{ item.dhcp_client_id | default(omit) }}"
+    dns4: "{{ item.dns4 | default(omit) }}"
+    dns4_ignore_auto: "{{ item.dns4_ignore_auto | default(omit) }}"
+    dns4_search: "{{ item.dns4_search | default(omit) }}"
+    dns6: "{{ item.dns6 | default(omit) }}"
+    dns6_ignore_auto: "{{ item.dns6_ignore_auto | default(omit) }}"
+    dns6_search: "{{ item.dns6_search | default(omit) }}"
+    downdelay: "{{ item.downdelay | default(omit) }}"
+    egress: "{{ item.egress | default(omit) }}"
+    flags: "{{ item.flags | default(omit) }}"
+    forwarddelay: "{{ item.forwarddelay | default(omit) }}"
+    gsm: "{{ item.gsm | default(omit) }}"
+    gw4: "{{ item.gw4 | default(omit) }}"
+    gw4_ignore_auto: "{{ item.gw4_ignore_auto | default(omit) }}"
+    gw6: "{{ item.gw6 | default(omit) }}"
+    gw6_ignore_auto: "{{ item.gw6_ignore_auto | default(omit) }}"
+    hairpin: "{{ item.hairpin | default(omit) }}"
+    hellotime: "{{ item.hellotime | default(omit) }}"
+    ifname: "{{ item.ifname | default(omit) }}"
+    ignore_unsupported_suboptions: "{{ item.ignore_unsupported_suboptions | default(omit) }}"
+    ingress: "{{ item.ingress | default(omit) }}"
+    ip4: "{{ item.ip4 | default(omit) }}"
+    ip6: "{{ item.ip6 | default(omit) }}"
+    ip_privacy6: "{{ item.ip_privacy6 | default(omit) }}"
+    ip_tunnel_dev: "{{ item.ip_tunnel_dev | default(omit) }}"
+    ip_tunnel_input_key: "{{ item.ip_tunnel_input_key | default(omit) }}"
+    ip_tunnel_local: "{{ item.ip_tunnel_local | default(omit) }}"
+    ip_tunnel_output_key: "{{ item.ip_tunnel_output_key | default(omit) }}"
+    ip_tunnel_remote: "{{ item.ip_tunnel_remote | default(omit) }}"
+    mac: "{{ item.mac | default(omit) }}"
+    macvlan: "{{ item.macvlan | default(omit) }}"
+    master: "{{ item.master | default(omit) }}"
+    maxage: "{{ item.maxage | default(omit) }}"
+    may_fail4: "{{ item.may_fail4 | default(omit) }}"
+    method4: "{{ item.method4 | default(omit) }}"
+    method6: "{{ item.method6 | default(omit) }}"
+    miimon: "{{ item.miimon | default(omit) }}"
+    mode: "{{ item.mode | default(omit) }}"
+    mtu: "{{ item.mtu | default(omit) }}"
+    never_default4: "{{ item.never_default4 | default(omit) }}"
+    path_cost: "{{ item.path_cost | default(omit) }}"
+    primary: "{{ item.primary | default(omit) }}"
+    priority: "{{ item.priority | default(omit) }}"
+    route_metric4: "{{ item.route_metric4 | default(omit) }}"
+    route_metric6: "{{ item.route_metric6 | default(omit) }}"
+    routes4: "{{ item.routes4 | default(omit) }}"
+    routes4_extended: "{{ item.routes4_extended | default(omit) }}"
+    routes6: "{{ item.routes6 | default(omit) }}"
+    routes6_extended: "{{ item.routes6_extended | default(omit) }}"
+    routing_rules4: "{{ item.routing_rules4 | default(omit) }}"
+    runner: "{{ item.runner | default(omit) }}"
+    runner_hwaddr_policy: "{{ item.runner_hwaddr_policy | default(omit) }}"
+    slavepriority: "{{ item.slavepriority | default(omit) }}"
+    ssid: "{{ item.ssid | default(omit) }}"
+    state: "{{ item.state }}"
+    stp: "{{ item.stp | default(omit) }}"
+    transport_mode: "{{ item.transport_mode | default(omit) }}"
+    type: "{{ item.type | default('ethernet') }}"
+    updelay: "{{ item.updelay | default(omit) }}"
+    vlandev: "{{ item.vlandev | default(omit) }}"
+    vlanid: "{{ item.vlanid | default(omit) }}"
+    vpn: "{{ item.vpn | default(omit) }}"
+    vxlan_id: "{{ item.vxlan_id | default(omit) }}"
+    vxlan_local: "{{ item.vxlan_local | default(omit) }}"
+    vxlan_remote: "{{ item.vxlan_remote | default(omit) }}"
+    wifi: "{{ item.wifi | default(omit) }}"
+    wifi_sec: "{{ item.wifi_sec | default(omit) }}"
+    wireguard: "{{ item.wireguard | default(omit) }}"
+    xmit_hash_policy: "{{ item.xmit_hash_policy | default(omit) }}"
+    zone: "{{ item.zone | default(omit) }}"
+  loop: "{{ common_nm_connections | default([]) }}"
+### END: Network settings for NetworkManager ###
+
+### BEGIN: Hostname and name resoling settings ###
+# Hostname
+- name: Set hostname
+  tags: system_init,hostname_init
+  ansible.builtin.hostname:
+    name: "{{ common_full_hostname }}"
+    use: systemd
+# /etc/hosts
+- name: Edit /etc/hosts
+  tags: system_init,hostname_init
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    block: |
+      {% for item in common_hosts_settings | default({}) %}
+      {{ item.ip }} {{ item.fqdn }}{% if item.shortname is defined %} {{ item.shortname }}{% endif +%}
+      {% endfor %}
+# Resolver settings
+- name: Set resolver settings if needed
+  when: common_resolver != 'none'
+  tags: system_init,resolver_init
+  block:
+    - name: Install resolver packages
+      block:
+        - name: Install resolver packages on normal Linux distros
+          when: ansible_pkg_mgr != "apt_rpm"
+          ansible.builtin.package:
+            name: "{{ item }}"
+            state: "present"
+          loop: "{{ common_resolver_packages | default([]) }}"
+        - name: Install resolver packages on Alt Linux
+          when: ansible_pkg_mgr == "apt_rpm"
+          community.general.apt_rpm:
+            name: "{{ item }}"
+            state: "present_not_latest"
+          loop: "{{ common_resolver_packages | default([]) }}"
+    - name: Set header of resolver config file
+      ansible.builtin.blockinfile:
+        path: "{{ common_resolver_config }}"
+        insertbefore: "BOF"
+        block: |
+          # File {{ common_resolver_config }}
+          # managed by ansible. You shouldn't edit it manually
+    - name: Set params in resolver config file
+      ansible.builtin.lineinfile:
+        path: "{{ common_resolver_config }}"
+        regexp: '^#?\s*{{ item.name }}\s*=.*'
+        line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}={% else %} {% endif %}{{ item.value }}"
+        state: present
+      loop: "{{ common_resolver_params }}"
+    - name: Set systemd resolver settings
+      when: common_resolver == 'systemd-resolved'
+      block:
+        - name: Check if systemd-resolved is started
+          ansible.builtin.service:
+            name: "systemd-resolved"
+            state: "started"
+        - name: Delete /etc/resolv.conf
+          ansible.builtin.file:
+            path: /etc/resolv.conf
+            state: absent
+        - name: Set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
+          ansible.builtin.file:
+            path: /etc/resolv.conf
+            src: /run/systemd/resolve/stub-resolv.conf
+            state: link
+          notify:
+            - Resolver enable
+            - Resolver restart
+### END: Hostname and name resoling settings ###

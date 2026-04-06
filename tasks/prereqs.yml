@@ -1,0 +1,28 @@
+---
+- name: Check if ansible version is equal or greater than 2.11
+  when: ansible_version.full is ansible.builtin.version('2.11','<')
+  ansible.builtin.fail:
+    msg: "Ansible core should be equal or greater than 2.11"
+
+- name: Check if python is equal or greater than 3
+  when: ansible_python.version.major is ansible.builtin.version('3','<')
+  ansible.builtin.fail:
+    msg: "Python should be equal or greater than 3"
+
+- name: Check network variables is defined and correct
+  ansible.builtin.assert:
+    that:
+      - common_ip4_default is defined
+      - common_ip4_default != "127.0.0.1"
+      - common_short_hostname is defined
+      - common_short_hostname != "myhost"
+      - common_domain_name is defined
+      - common_domain_name != "example.com"
+      - common_full_hostname is defined
+    fail_msg: |
+      Any of necessary variables:
+        - common_ip4_default: "127.0.0.1" # must be changed
+        - common_short_hostname: "myhost" # must be changed
+        - common_domain_name: "example.com" # must be changed
+        - common_full_hostname: # may be "{{ common_short_hostname }}.{{ common_domain_name }}"
+      is wrong

@@ -1,5 +1,8 @@
 ---
 # generate and put ssh-keys on cluster hosts
+# this playbook was removed from postgres role
+# because create ssh keys for users and put its
+# is not only deploy postgres tasksk
 - name: Get user info and check if common_user_sk has executable shell
   become: true
   become_user: root

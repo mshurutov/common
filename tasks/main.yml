@@ -1,13 +1,6 @@
 ---
-- name: Check if ansible version is equal or greater than 2.11
-  ansible.builtin.fail:
-    msg: "Ansible core should be equal or greater than 2.11"
-  when: ansible_version.full is ansible.builtin.version('2.11','<')
-
-- name: Check if python is equal or greater than 3
-  ansible.builtin.fail:
-    msg: "Python should be equal or greater than 3"
-  when: ansible_python.version.major is ansible.builtin.version('3','<')
+- name: Check requirements
+  ansible.builtin.import_tasks: "prereqs.yml"
 
 - name: Set system-independ variables
   ansible.builtin.include_vars:
@@ -21,10 +14,10 @@
 
 - name: Create any config dirs
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ item.name }}"
     state: directory
-    mode: "0755"
-  loop: "{{ common_config_dirs }}"
+    mode: "{{ item.mode }}"
+  loop: "{{ common_config_dirs | default({}) }}"
   tags: system_init,system_config,system_config_dirs
 
 - name: Create ops user
@@ -68,40 +61,17 @@
         name: "ops_user_sudo"
         nopassword: true
 
-- name: Set common_full_hostname if it is not defined
-  ansible.builtin.set_fact:
-    common_full_hostname: "{{ common_short_hostname + '.' + common_domain_name }}"
-  when: common_full_hostname is not defined
-  tags: system_init,hostname_init,hostname_var_set
+- name: Configure common network parameters
+  ansible.builtin.import_tasks: "network.yml"
+  tags: system_init,network_config
 
-- name: Set hostname
-  ansible.builtin.hostname:
-    name: "{{ common_full_hostname }}"
-    use: systemd
-  tags: system_init,hostname_init
-
-- name: Edit /etc/hosts
-  ansible.builtin.blockinfile:
-    path: /etc/hosts
-    block: |
-      {% for item in common_hosts_settings %}
-      {{ item.ip }} {{ item.fqdn }}{% if item.shortname is defined %} {{ item.shortname }}{% endif +%}
-      {% endfor %}
-  when: common_hosts_settings is defined and common_hosts_settings | length > 0
-  tags: system_init,hostname_init
-
+### BEGIN: Setup package manager ###
 - name: Init of package management system
   ansible.builtin.include_tasks: "{{ ansible_pkg_mgr }}-init.yml"
   tags: system_init,system_pm_init
+### END: Setup package manager ###
 
-- name: Install system packages if need
-  ansible.builtin.package:
-    name: "{{ item.pkg }}"
-    state: present
-  loop: "{{ common_system_packages }}"
-  when: common_system_packages_install is defined and common_system_packages_install | length > 0
-  tags: system_init,system_install
-
+### BEGIN: Edit any system configs ###
 - name: Edit any system config
   ansible.builtin.lineinfile:
     path: "{{ item.path }}"
@@ -112,9 +82,11 @@
     state: "{{ item.state | default('present') }}"
     create: "{{ item.create | default(true) }}"
     mode: "{{ item.file_mode | default('0644') }}"
-  loop: "{{ common_system_config }}"
+  loop: "{{ common_system_config | default({}) }}"
   tags: system_init,system_config
+### END: Edit any system configs ###
 
+### BEGIN: Locale settings ###
 - name: Create /etc/locale.gen
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/locale.gen.j2"
@@ -123,7 +95,6 @@
   notify: Rebuild locales
   when: ansible_os_family == "Gentoo" or ansible_os_family == "Debian"
   tags: system_init,locale_init
-
 - name: Create /etc/locale.conf
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/locale.conf.j2"
@@ -133,7 +104,6 @@
   loop_control:
     loop_var: lc
   tags: system_init,locale_init
-
 - name: Create /etc/vconsole.conf
   ansible.builtin.template:
     src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
@@ -141,101 +111,29 @@
     mode: "0644"
   when: common_kbd_n_cfont_settings is defined and common_kbd_n_cfont_settings | length > 0
   tags: system_init,locale_init
+### END: Locale settings ###
 
-- name: Set network parameters for NetworkManager
-  when: common_network_manager == 'networkmanager'
-  notify: Networkmanager restart
-  tags: system_init,network_init
-  block:
-    - name: Set common network parameters
-      community.general.nmcli:
-        addr_gen_mode6: "{{ item.addr_gen_mode6 | default(omit) }}"
-        ageingtime: "{{ item.ageingtime | default(omit) }}"
-        arp_interval: "{{ item.arp_interval | default(omit) }}"
-        arp_ip_target: "{{ item.arp_ip_target | default(omit) }}"
-        autoconnect: "{{ item.autoconnect | default(omit) }}"
-        conn_name: "{{ item.conn_name }}"
-        dhcp_client_id: "{{ item.dhcp_client_id | default(omit) }}"
-        dns4: "{{ item.dns4 | default(omit) }}"
-        dns4_ignore_auto: "{{ item.dns4_ignore_auto | default(omit) }}"
-        dns4_search: "{{ item.dns4_search | default(omit) }}"
-        dns6: "{{ item.dns6 | default(omit) }}"
-        dns6_ignore_auto: "{{ item.dns6_ignore_auto | default(omit) }}"
-        dns6_search: "{{ item.dns6_search | default(omit) }}"
-        downdelay: "{{ item.downdelay | default(omit) }}"
-        egress: "{{ item.egress | default(omit) }}"
-        flags: "{{ item.flags | default(omit) }}"
-        forwarddelay: "{{ item.forwarddelay | default(omit) }}"
-        gsm: "{{ item.gsm | default(omit) }}"
-        gw4: "{{ item.gw4 | default(omit) }}"
-        gw4_ignore_auto: "{{ item.gw4_ignore_auto | default(omit) }}"
-        gw6: "{{ item.gw6 | default(omit) }}"
-        gw6_ignore_auto: "{{ item.gw6_ignore_auto | default(omit) }}"
-        hairpin: "{{ item.hairpin | default(omit) }}"
-        hellotime: "{{ item.hellotime | default(omit) }}"
-        ifname: "{{ item.ifname | default(omit) }}"
-        ignore_unsupported_suboptions: "{{ item.ignore_unsupported_suboptions | default(omit) }}"
-        ingress: "{{ item.ingress | default(omit) }}"
-        ip4: "{{ item.ip4 | default(omit) }}"
-        ip6: "{{ item.ip6 | default(omit) }}"
-        ip_privacy6: "{{ item.ip_privacy6 | default(omit) }}"
-        ip_tunnel_dev: "{{ item.ip_tunnel_dev | default(omit) }}"
-        ip_tunnel_input_key: "{{ item.ip_tunnel_input_key | default(omit) }}"
-        ip_tunnel_local: "{{ item.ip_tunnel_local | default(omit) }}"
-        ip_tunnel_output_key: "{{ item.ip_tunnel_output_key | default(omit) }}"
-        ip_tunnel_remote: "{{ item.ip_tunnel_remote | default(omit) }}"
-        mac: "{{ item.mac | default(omit) }}"
-        macvlan: "{{ item.macvlan | default(omit) }}"
-        master: "{{ item.master | default(omit) }}"
-        maxage: "{{ item.maxage | default(omit) }}"
-        may_fail4: "{{ item.may_fail4 | default(omit) }}"
-        method4: "{{ item.method4 | default(omit) }}"
-        method6: "{{ item.method6 | default(omit) }}"
-        miimon: "{{ item.miimon | default(omit) }}"
-        mode: "{{ item.mode | default(omit) }}"
-        mtu: "{{ item.mtu | default(omit) }}"
-        never_default4: "{{ item.never_default4 | default(omit) }}"
-        path_cost: "{{ item.path_cost | default(omit) }}"
-        primary: "{{ item.primary | default(omit) }}"
-        priority: "{{ item.priority | default(omit) }}"
-        route_metric4: "{{ item.route_metric4 | default(omit) }}"
-        route_metric6: "{{ item.route_metric6 | default(omit) }}"
-        routes4: "{{ item.routes4 | default(omit) }}"
-        routes4_extended: "{{ item.routes4_extended | default(omit) }}"
-        routes6: "{{ item.routes6 | default(omit) }}"
-        routes6_extended: "{{ item.routes6_extended | default(omit) }}"
-        routing_rules4: "{{ item.routing_rules4 | default(omit) }}"
-        runner: "{{ item.runner | default(omit) }}"
-        runner_hwaddr_policy: "{{ item.runner_hwaddr_policy | default(omit) }}"
-        slavepriority: "{{ item.slavepriority | default(omit) }}"
-        ssid: "{{ item.ssid | default(omit) }}"
-        state: "{{ item.state }}"
-        stp: "{{ item.stp | default(omit) }}"
-        transport_mode: "{{ item.transport_mode | default(omit) }}"
-        type: "{{ item.type | default('ethernet') }}"
-        updelay: "{{ item.updelay | default(omit) }}"
-        vlandev: "{{ item.vlandev | default(omit) }}"
-        vlanid: "{{ item.vlanid | default(omit) }}"
-        vpn: "{{ item.vpn | default(omit) }}"
-        vxlan_id: "{{ item.vxlan_id | default(omit) }}"
-        vxlan_local: "{{ item.vxlan_local | default(omit) }}"
-        vxlan_remote: "{{ item.vxlan_remote | default(omit) }}"
-        wifi: "{{ item.wifi | default(omit) }}"
-        wifi_sec: "{{ item.wifi_sec | default(omit) }}"
-        wireguard: "{{ item.wireguard | default(omit) }}"
-        xmit_hash_policy: "{{ item.xmit_hash_policy | default(omit) }}"
-        zone: "{{ item.zone | default(omit) }}"
-      loop: "{{ common_nm_connections }}"
-
+### BEGIN: Set system date and time and time sync ###
 - name: Set timezone
   community.general.timezone:
     name: "{{ common_timezone }}"
   tags: system_init,timesync_init
-
 # Time sync is not need on containers
 - name: Set time sync if needed
   when: common_timesync_service != 'none'
   block:
+    - name: Install timesync packages on normal Linux distros
+      when: ansible_pkg_mgr != "apt_rpm"
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: "present"
+      loop: "{{ common_timesync_packages | default([]) }}"
+    - name: Install timesync packages on Alt Linux
+      when: ansible_pkg_mgr == "apt_rpm"
+      community.general.apt_rpm:
+        name: "{{ item }}"
+        state: "present_not_latest"
+      loop: "{{ common_timesync_packages | default([]) }}"
     - name: Set timesync config file header
       ansible.builtin.blockinfile:
         path: "{{ common_time_config_path }}"
@@ -259,52 +157,15 @@
         - Timesync_service enable
         - Timesync_service restart
       tags: system_init,timesync_init
+### END: Set system date and time and time sync ###
 
-- name: Set resolver settings if needed
-  when: common_resolver != 'none'
-  block:
-    - name: Set header of resolver config file
-      ansible.builtin.blockinfile:
-        path: "{{ common_resolver_config }}"
-        insertbefore: "BOF"
-        block: |
-          # File {{ common_resolver_config }}
-          # managed by ansible. You shouldn't edit it manually
-      tags: system_init,resolver_init
-    - name: Set params in resolver config file
-      ansible.builtin.lineinfile:
-        path: "{{ common_resolver_config }}"
-        regexp: '^#?\s*{{ item.name }}\s*=.*'
-        line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}={% else %} {% endif %}{{ item.value }}"
-        state: present
-      loop: "{{ common_resolver_params }}"
-      tags: system_init,resolver_init
-    - name: Set systemd resolver settings
-      when: common_resolver == 'systemd-resolved'
-      block:
-        - name: Check if systemd-resolved is started
-          ansible.builtin.service:
-            name: "systemd-resolved"
-            state: "started"
-        - name: Delete /etc/resolv.conf
-          ansible.builtin.file:
-            path: /etc/resolv.conf
-            state: absent
-          tags: system_init,resolver_init
-        - name: Set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
-          ansible.builtin.file:
-            path: /etc/resolv.conf
-            src: /run/systemd/resolve/stub-resolv.conf
-            state: link
-          notify:
-            - Resolver enable
-            - Resolver restart
-          tags: system_init,resolver_init
-
+### BEGIN: Install system ###
 - name: Install all packages
   ansible.builtin.include_tasks: "{{ ansible_pkg_mgr }}.yml"
   tags: common_world_install,common_install
+### END: Install system ###
 
+### BEGIN: Add systemd units ###
 - name: Add selfmade systemd units
   when: ansible_service_mgr == 'systemd' and common_systemd_units is defined and common_systemd_units | length > 0
   tags: system_init,systemd_units
@@ -331,7 +192,9 @@
         enabled: true
       when: item.0.instances is defined and item.0.instances | length > 0
       loop: "{{ common_systemd_units | subelements('instances') }}"
+### END: Add systemd units ###
 
+### BEGIN: Setup crontab ###
 - name: Add crontabs
   ansible.builtin.cron:
     backup: "{{ item.backup | default(omit) }}"
@@ -352,7 +215,9 @@
     weekday: "{{ item.weekday | default('*') }}"
   loop: "{{ common_crontabs }}"
   tags: system_init,crontab
+### END: Setup crontab ###
 
+### BEGIN: Set polisies by edit polkit rules ###
 - name: Clean polkit rules directory
   when: clean_polkit_rules_dir_force is defined and clean_polkit_rules_dir_force | bool
   tags: system_init,polkit_rules_set
@@ -367,12 +232,20 @@
         path: "{{ item.path }}"
         state: absent
       loop: "{{ files2del.files }}"
-
 - name: Copy polkit rules
-  when: common_polkit_rules | length > 0
   tags: system_init,polkit_rules_set
   ansible.builtin.template:
     src: "{{ item.template_path }}/{{ item.action }}.rules.j2"
     dest: "/etc/polkit-1/rules.d/{{ item.action }}.rules"
     mode: "0644"
-  loop: "{{ common_polkit_rules }}"
+  loop: "{{ common_polkit_rules | default({}) }}"
+### END: Set polisies by edit polkit rules ###
+
+### BEGIN: ###
+- name: Manage own SSL keys
+  ansible.builtin.include_tasks: "ssl_keys.yml"
+  tags: system_init,ssl_keys
+  loop: "{{ common_ssl_keys | default([]) }}"
+  loop_control:
+    loop_var: csk
+### END: ###

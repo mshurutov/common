@@ -21,12 +21,12 @@
     - name: Update world
       community.general.portage:
         package: "@world"
-#    quiet: true
+#        quiet: true
         deep: true
         newuse: true
         update: true
-        verbose: true
-#    sync: true
+#        verbose: true
+#        sync: true
     - name: Remove unneeded packages
       community.general.portage:
         depclean: true
