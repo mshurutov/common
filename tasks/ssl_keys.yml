@@ -1,47 +1,78 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
 ---
-# Create ssl keys pair for objects
+# Create ssl keys/certs for any objects
+- name: Show variables
+  ansible.builtin.debug:
+    msg: "{{ csk }}"
+# Directories for create keys/certs exist
+- name: Check if necessary directories exist
+  become: true
+  become_user: root
+  tags: create_ssl_keys,ssl_keys_dirs
+  delegate_to: "{{ csk.ssl_ca_host }}"
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: "directory"
+    owner: "root"
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ hostvars[csk.ssl_ca_host]['create_ssl_priv_dir'] }}"
+      mode: '0700'
+    - path: "{{ hostvars[csk.ssl_ca_host]['create_ssl_certs_dir'] }}"
+      mode: '0755'
+    - path: "{{ common_central_store }}/{{ common_ssl_cs_path }}"
+      mode: '0755'
 # Set pubkey_stat.stat.exists variable
 - name: Get stats of a public key in central storage
   become: true
   become_user: root
   tags: create_ssl_keys
+  delegate_to: "localhost"
   ansible.builtin.stat:
-    path: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.cert_filename }}"
-  register: pubkey_stat
+    path: "{{ item }}"
+  loop:
+    - "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.cert_filename }}"
+    - "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.privatekey_filename }}"
+  register: key_stat
 # Set key_info.valid_at.crit variable
 - name: Get info for key from central storage
   become: true
   become_user: root
-  when: pubkey_stat.stat.exists
+  when: key_stat.results.0.stat.exists
   tags: create_ssl_keys
+  delegate_to: "127.0.0.1"
   community.crypto.x509_certificate_info:
     path: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.cert_filename }}"
     valid_at:
-      crit: "+{{ csk.expired_period }}"
+      crit: "+{{ csk.expired_period | default('2w') }}"
   register: key_info
 
-# (Re)generate a pair of ssl keys: private and public
+# ## (Re)generate a certificate and private key ###
 - name: Regenerate key pair if needed
   become: true
   become_user: root
-  when: not pubkey_stat.stat.exists or not (key_info.valid_at.crit | default('true'))
+  when: >
+    not key_stat.results.0.stat.exists or
+    not key_stat.results.1.stat.exists or
+    not (key_info.valid_at.crit | default('false'))
   tags: create_ssl_keys
   block:
+# ## Private key ###
     - name: Generate private key
-      delegate_to: "{{ csk.common_ssl_ca_host }}"
+      delegate_to: "{{ csk.ssl_ca_host }}"
       community.crypto.openssl_privatekey:
-        attributes: "{{ csk.attributes | default(omit) }}"
+        attributes: "{{ csk.privkey_attributes | default(omit) }}"
         backup: "{{ csk.privkey_backup | default(omit) }}"
         cipher: "{{ csk.cipher | default(omit) }}"
         curve: "{{ csk.curve | default(omit) }}"
-        force: "{{ csk.force | default(omit) }}"
+        force: "{{ csk.privkey_force | default(omit) }}"
         format: "{{ csk.format | default(omit) }}"
         format_mismatch: "{{ csk.format_mismatch | default(omit) }}"
         group: "{{ csk.group | default('root') }}" 
-        mode: "{{ csk.mode | default('0600') }}"
+        mode: "{{ csk.private_key_mode | default('0600') }}"
         owner: "{{ csk.owner | default('root') }}"
         passphrase: "{{ csk.passphrase | default(omit) }}"
-        path: "{{ common_ssl_private_keys_dir }}/{{ csk.privatekey_filename }}"
+        path: "{{ hostvars[csk.ssl_ca_host]['create_ssl_priv_dir'] }}/{{ csk.privatekey_filename }}"
         regenerate: "{{ csk.regenerate | default(omit) }}"
         return_content: true
         select_crypto_backend: "{{ csk.select_crypto_backend | default(omit) }}"
@@ -54,8 +85,9 @@
         type: "{{ csk.type | default('RSA') }}"
         unsafe_writes: "{{ csk.unsafe_writes | default('false') }}"
       register: ssl_pk_var
+# ## Certificate Signing Request ###
     - name: Generate Certificate Signing Request on CA host
-      delegate_to: "{{ csk.common_ssl_ca_host }}"
+      delegate_to: "{{ csk.ssl_ca_host }}"
       community.crypto.openssl_csr:
         attributes: "{{ csk.attributes | default(omit) }}"
         authority_cert_issuer: "{{ csk.authority_cert_issuer | default(omit) }}"
@@ -64,31 +96,31 @@
         backup: "{{ csk.csr_backup | default(omit) }}"
         basic_constraints: "{{ csk.basic_constraints | default(omit) }}" # for example ['CA:TRUE']
         basic_constraints_critical: "{{ csk.basic_constraints_critical | default(omit) }}"
-        common_name: "{{ csk.common_name }}"
-        country_name: "{{ common_country_name | default(omit) }}"
+        common_name: "{{ csk.common_name | default(common_domain_name) }}"
+        country_name: "{{ csk.country_name | default(common_country_name) | default(omit) }}"
         create_subject_key_identifier: "{{ csk.create_subject_key_identifier | default(omit) }}"
         crl_distribution_points: "{{ csk.crl_distribution_points | default(omit) }}"
         digest: "{{ csk.digest | default(omit) }}"
-        email_address: "{{ csk.email_address | default(omit) }}"
+        email_address: "{{ csk.email_address | default(common_ssl_owner_email_address) | default(omit) }}"
         extended_key_usage: "{{ csk.extended_key_usage | default(omit) }}"
         extended_key_usage_critical: "{{ csk.extended_key_usage_critical | default(omit) }}"
-        force: "{{ csk.force | default(omit) }}"
+        force: "{{ csk.csr_force | default(omit) }}"
         group: "{{ csk.group | default('root') }}" 
         key_usage: "{{ csk.key_usage | default(omit) }}" # for example ['keyCertSign']
         key_usage_critical: "{{ csk.key_usage_critical | default(omit) }}"
-        locality_name: "{{ csk.locality_name | default(omit) }}"
+        locality_name: "{{ csk.locality_name | default(common_ssl_locality_name) | default(omit) }}"
         mode: "{{ csk.mode | default('0600') }}"
         name_constraints_critical: "{{ csk.name_constraints_critical | default(omit) }}"
         name_constraints_excluded: "{{ csk.name_constraints_excluded | default(omit) }}"
         name_constraints_permitted: "{{ csk.name_constraints_permitted | default(omit) }}"
         ocsp_must_staple_critical: "{{ csk.ocsp_must_staple_critical | default(omit) }}"
-        organization_name: "{{ common_organization_name | default(omit) }}"
-        organizational_unit_name: "{{ csk.organizational_unit_name | default(omit) }}"
+        organization_name: "{{ csk.organization_name | default(common_organization_name) | default(omit) }}"
+        organizational_unit_name: "{{ csk.organizational_unit_name | default(common_organizational_unit_name) | default(omit) }}"
         owner: "{{ csk.owner | default('root') }}"
-        path: "{{ common_ssl_private_keys_dir }}/{{ csk.csr_filename }}"
+        path: "{{ hostvars[csk.ssl_ca_host]['create_ssl_priv_dir'] }}/{{ csk.csr_filename }}"
 #        privatekey_content: "{{ ssl_pk_var.privatekey }}" # I use file, but you...
         privatekey_passphrase: "{{ csk.privatekey_passphrase | default(omit) }}"
-        privatekey_path: "{{ common_ssl_private_keys_dir }}/{{ csk.privatekey_filename }}"
+        privatekey_path: "{{ hostvars[csk.ssl_ca_host]['create_ssl_priv_dir'] }}/{{ csk.privatekey_filename }}"
         return_content: true
         select_crypto_backend: "{{ csk.select_crypto_backend | default(omit) }}"
         selevel: "{{ csk.level | default(omit) }}"
@@ -96,7 +128,7 @@
         setype: "{{ csk.setype | default(omit) }}"
         seuser: "{{ csk.seuser | default(omit) }}"
         state: "{{ csk.state | default('present') }}"
-        state_or_province_name: "{{ csk.state_or_province_name | default(omit) }}"
+        state_or_province_name: "{{ csk.state_or_province_name | default(common_ssl_state_or_province_name) | default(omit) }}"
         subject: "{{ csk.subject | default(omit) }}"
         subject_alt_name: "{{ csk.subject_alt_name | default(omit) }}"
         subject_alt_name_critical: "{{ csk.subject_alt_name_critical | default(omit) }}"
@@ -106,41 +138,44 @@
         use_common_name_for_san: "{{ csk.use_common_name_for_san | default(omit) }}"
         version: 1
       register: ssl_csr_var
+# ## Certificate ###
     - name: Generate selfsigned cert
-      delegate_to: "{{ csk.common_ssl_ca_host }}"
+      delegate_to: "{{ csk.ssl_ca_host }}"
       community.crypto.x509_certificate:
         acme_accountkey_path: "{{ csk.acme_accountkey_path | default(omit) }}"
         acme_chain: "{{ csk.acme_chain | default(omit) }}"
         acme_challenge_path: "{{ csk.acme_challenge_path | default(omit) }}"
         acme_directory: "{{ csk.acme_directory | default(omit) }}"
         attributes: "{{ csk.attributes | default(omit) }}"
-        backup: "{{ csk.backup | default(omit) }}"
-        csr_content: "{{ ssl_csr_var.csr }}"
-#        csr_path: "{{ common_ssl_private_keys_dir }}/{{ csk.csr_filename }}"
-        force: "{{ csk.force | default(omit) }}"
+        backup: "{{ csk.cert_backup | default(omit) }}"
+#        csr_content: "{{ ssl_csr_var.csr }}"
+        csr_path: "{{ hostvars[csk.ssl_ca_host]['create_ssl_priv_dir'] }}/{{ csk.csr_filename }}"
+        force: "{{ csk.cert_force | default(omit) }}"
         group: "{{ csk.group | default('root') }}" 
         ignore_timestamps: "{{ csk.ignore_timestamps | default(omit) }}"
-        mode: "{{ csk.mode | default('0644') }}"
+        mode: "{{ csk.cert_mode | default('0644') }}"
+# OWNCA variables are used when you use own CA cert
 #        ownca_content: "{{ csk.ownca_content }}" # I use file, but you...
         ownca_create_authority_key_identifier: "{{ csk.ownca_create_authority_key_identifier | default(omit) }}"
         ownca_create_subject_key_identifier: "{{ csk.ownca_create_subject_key_identifier | default(omit) }}"
         ownca_digest: "{{ csk.ownca_digest | default(omit) }}"
         ownca_not_after: "{{ csk.ownca_not_after | default(omit) }}"
         ownca_not_before: "{{ csk.ownca_not_before | default(omit) }}"
-        ownca_path: "{{ csk.ownca_path | default(omit) }}"
+        ownca_path: "{{ csk.ownca_path | default(common_ssl_ca_cert) | default(omit) }}"
 #        ownca_privatekey_content: "{{ csk.ownca_privatekey_content }}" # I use file, but you...
         ownca_privatekey_passphrase: "{{ csk.ownca_privatekey_passphrase | default(omit) }}"
-        ownca_privatekey_path: "{{ csk.ownca_privatekey_path }}"
+        ownca_privatekey_path: "{{ csk.ownca_privatekey_path | default(common_ssl_ca_pkey) | default(omit) }}"
         ownca_version: "{{ csk.ownca_version | default(omit) }}"
         owner: "{{ csk.owner | default('root') }}"
-        path: "{{ common_ssl_certs_dir }}/{{ csk.cert_filename }}"
+        path: "{{ hostvars[csk.ssl_ca_host]['create_ssl_certs_dir'] }}/{{ csk.cert_filename }}"
 #        privatekey_content: "{{ ssl_pk_var.privatekey }}" # I use file, but you...
         privatekey_passphrase: "{{ csk.privatekey_passphrase | default(omit) }}"
-        privatekey_path: "{{ csk.privkey_fullpath | default(omit) }}"
+        privatekey_path: "{{ hostvars[csk.ssl_ca_host]['create_ssl_priv_dir'] }}/{{ csk.privatekey_filename }}"
         provider: "{{ csk.provider | default('ownca') }}"
         return_content: true
         select_crypto_backend: "{{ csk.select_crypto_backend | default(omit) }}"
         selevel: "{{ csk.level | default(omit) }}"
+# Selfsigned variables is used when you used selfsigned certs. CA for example.
         selfsigned_create_subject_key_identifier: "{{ csk.selfsigned_create_subject_key_identifier | default(omit) }}"
         selfsigned_digest: "{{ csk.selfsigned_digest | default(omit) }}"
         selfsigned_not_after: "{{ csk.selfsigned_not_after | default(omit) }}"
@@ -153,15 +188,61 @@
         unsafe_writes: "{{ csk.unsafe_writes | default('false') }}"
       register: ssl_cert_var
       notify: Upload ca
-    - name: Copy SSL cert to central storage
-      ansible.builtin.copy:
-        dest: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.cert_filename }}"
-        content: "{{ ssl_cert_var.certificate }}"
-        mode: "0644"
-      delegate_to: 127.0.0.1
-    - name: Copy SSL private key to central storage
-      ansible.builtin.copy:
-        dest: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.privatekey_filename }}"
-        content: "{{ ssl_pk_var.privatekey }}"
-        mode: "0644"
-      delegate_to: 127.0.0.1
+    - name: Copy generated files to central store
+      become: false
+      block:
+        - name: Copy SSL cert to central storage
+          ansible.builtin.copy:
+            dest: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.cert_filename }}"
+            content: "{{ ssl_cert_var.certificate }}"
+            mode: "0644"
+          delegate_to: "127.0.0.1"
+        - name: Copy SSL private key to central storage
+          ansible.builtin.copy:
+            dest: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.privatekey_filename }}"
+            content: "{{ ssl_pk_var.privatekey }}"
+            mode: "0644"
+          delegate_to: "127.0.0.1"
+- name: OpenSSL Diffie-Hellman Parameters file
+  # csk.dh.filename must be defined and not be empty
+  when: csk.dh is defined and csk.dh | length > 0
+  tags: create_ssl_keys
+  block:
+    - name: Check if Diffie-Hellman Parameters file exists
+      delegate_to: "127.0.0.1"
+      ansible.builtin.stat:
+        path: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.dh.filename }}"
+      register: dhfile
+    - name: Create Diffie-Hellman Parameters file
+      delegate_to: "{{ csk.ssl_ca_host }}"
+      when: not dhfile.stat.exists
+      block:
+        - name: Generate DH params file
+          become: true
+          become_user: root
+          delegate_to: "{{ csk.ssl_ca_host }}"
+          community.crypto.openssl_dhparam:
+            attributes: "{{ csk.dh.attributes | default(omit) }}"
+            backup: "{{ csk.dh.backup | default(omit) }}"
+            force: "{{ csk.dh.force | default(omit) }}"
+            group: "{{ csk.dh.group | default(omit) }}"
+            mode: "{{ csk.dh.mode | default(omit) }}"
+            owner: "{{ csk.dh.owner | default(omit) }}"
+            path: "{{ hostvars[csk.ssl_ca_host]['create_ssl_certs_dir'] }}/{{ csk.dh.filename }}"
+            return_content: true
+            select_crypto_backend: "{{ csk.dh.select_crypto_backend | default(omit) }}"
+            selevel: "{{ csk.dh.selevel | default(omit) }}"
+            serole: "{{ csk.dh.serole | default(omit) }}"
+            setype: "{{ csk.dh.setype | default(omit) }}"
+            seuser: "{{ csk.dh.seuser | default(omit) }}"
+            size: "{{ csk.dh.size | default(omit) }}"
+            state: "{{ csk.dh.state | default('present') }}"
+            unsafe_writes: "{{ csk.dh.unsafe_writes | default('false') }}"
+          register: dhparams
+        - name: Copy Diffie-Hellman Parameters file to central store
+          become: false
+          ansible.builtin.copy:
+            dest: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.dh.filename }}"
+            content: "{{ dhparams.dhparams }}"
+            mode: "0644"
+          delegate_to: 127.0.0.1

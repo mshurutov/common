@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+---
+# Copy SSL keys and certs from central store in place
+- name: Copy SSL keys and certs
+  tags: put_ssl_keys
+  ansible.builtin.copy:
+    dest: "{{ item.path }}/{{ item.filename }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+    owner: "{{ item.owner }}"
+    src: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ item.filename }}"
+  loop:
+    - filename: "{{ csk.privatekey_filename }}"
+      group: "{{ csk.group | default('root') }}"
+      mode: "{{ csk.private_key_mode | default('0600') }}"
+      owner: "{{ csk.owner | default('root') }}"
+      path: "{{ csk.private_dir }}"
+    - filename: "{{ csk.cert_filename }}"
+      group: "{{ csk.group | default('root') }}"
+      mode: "{{ csk.cert_mode | default('0644') }}"
+      owner: "{{ csk.owner | default('root') }}"
+      path: "{{ csk.certs_dir }}"
+- name: Copy Diffie-Hellman Parameters file in place
+  # csk.dh.filename must be defined and not be empty
+  when: csk.dh is defined and csk.dh | length > 0
+  tags: put_ssl_keys
+  ansible.builtin.copy:
+    dest: "{{ csk.certs_dir }}/{{ csk.dh.filename }}"
+    group: "{{ csk.group | default('root') }}"
+    mode: "{{ csk.cert_mode | default('0644') }}"
+    owner: "{{ csk.owner | default('root') }}"
+    src: "{{ common_central_store }}/{{ common_ssl_cs_path }}/{{ csk.dh.filename }}"

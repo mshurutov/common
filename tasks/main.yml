@@ -7,9 +7,18 @@
     file: "{{ common_vars_dir }}/main.yml"
   tags: system_config,system_init,system_install,system_pm_init,common_world_install
 
+# - name: Show os family and distro release
+#   tags: system_config,system_init,system_install,system_pm_init,common_world_install
+#   debug:
+#     msg:
+#       - "ansible_distribution_release is {{ ansible_distribution_release }}"
+#       - "ansible_os_family is {{ ansible_os_family }}"
 - name: Set system-depend variables
   ansible.builtin.include_vars:
-    file: "{{ common_vars_dir }}/{{ ansible_os_family }}.yml"
+# Since ansible-core-2.19.2 ansible the Gentoo Linux is determined as ClearLinux.
+    file: "{{ common_vars_dir }}/{% if ansible_distribution_release | regex_replace(\"'\") == 'gentoo' and ansible_os_family == 'ClearLinux' %}Gentoo{% else %}{{ ansible_os_family }}{% endif %}.yml"
+# This bug is fixed in ansible-core-2.20
+#    file: "{{ common_vars_dir }}/{{ ansible_os_family }}.yml"
   tags: system_config,system_init,system_install,system_pm_init,common_world_install
 
 - name: Create any config dirs
@@ -241,11 +250,17 @@
   loop: "{{ common_polkit_rules | default({}) }}"
 ### END: Set polisies by edit polkit rules ###
 
-### BEGIN: ###
+### BEGIN: Common SSL keys are CA keys for example ###
 - name: Manage own SSL keys
+  tags: system_init,ssl_keys,ssl_keys_create
   ansible.builtin.include_tasks: "ssl_keys.yml"
-  tags: system_init,ssl_keys
   loop: "{{ common_ssl_keys | default([]) }}"
   loop_control:
     loop_var: csk
-### END: ###
+- name: Put own SSL keys in place
+  tags: system_init,ssl_keys,ssl_keys_put
+  ansible.builtin.include_tasks: "ssl_keys_put.yml"
+  loop: "{{ common_ssl_keys | default([]) }}"
+  loop_control:
+    loop_var: csk
+### END: Common SSL keys ###

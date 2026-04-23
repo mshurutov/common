@@ -19,6 +19,7 @@
       - common_domain_name is defined
       - common_domain_name != "example.com"
       - common_full_hostname is defined
+      - common_full_hostname | length > 0
     fail_msg: |
       Any of necessary variables:
         - common_ip4_default: "127.0.0.1" # must be changed

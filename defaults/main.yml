@@ -23,30 +23,77 @@ common_sudo_groups:
 #    gid: "{{ common_ops_uid }}"
 
 # any SSL variables
-common_own_ssl_ca: false
 common_country_name: "RU"
+common_ssl_state_or_province_name: "Moscow Region"
+common_ssl_locality_name: "Moscow"
+common_organization_name: "Free Artist LTD"
+common_organizational_unit_name: "SysOps Team"
 common_ssl_owner_email_address: "admin@example.com"
-common_ssl_common_name: "{{ common_domain_name }}"
-# common_organization_name: # this variable is not necessary
-# common_ssl_locality_name: # this variable is not necessary
-# common_ssl_subject_alt_name: # this variable is not necessary, but recomended
-common_ssl_private_keys_dir: "/etc/ssl/private"
-common_ssl_certs_dir: "/etc/ssl/certs"
+common_ssl_config_dir: "/etc/ssl"
+common_ssl_private_keys_dir: "{{ common_ssl_config_dir }}/private"
+common_ssl_certs_dir: "{{ common_ssl_config_dir }}/certs"
 common_ssl_cs_path: "ssl-certs"
-common_ssl_ca_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.pem"
-common_ssl_ca_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca-private.csr"
-common_ssl_ca_cert: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ssl-ca.pem"
+common_ssl_ca_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca.key"
+common_ssl_ca_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca.csr"
+common_ssl_ca_cert: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ca.pem"
 common_ssl_ca_host:
-common_ssl_keys:
-#  - cname:
-#    pkey:
-#    csr:
-#    cert:
-common_ssl_ca_domains:
+common_ssl_keys: []
+# CA
+# Directories
+#  - private_dir: "{{ common_ssl_private_keys_dir }}"
+#    certs_dir: "{{ common_ssl_certs_dir }}"
+# Host
+#    common_ssl_ca_host: "{{ common_ssl_ca_host }}"
+# ### Private key
+#    privatekey_filename: "{{ common_domain_name }}-ca.key"
+# ### Certificate Signing Request (CSR)
+#    csr_filename: "{{ common_domain_name }}-ca.csr"
+#    basic_constraints:
+#      - 'CA:TRUE'
+#    basic_constraints_critical: true
+#    common_name: "{{ common_domain_name }}"
+#    country_name: "{{ common_country_name }}"
+#    email_address: "{{ common_ssl_owner_email_address }}"
+#    key_usage:
+#      - 'keyCertSign'
+#    key_usage_critical: true
+#    locality_name: "{{ common_ssl_locality_name }}"
+#    organization_name: "{{ common_organization_name }}"
+# #   organizational_unit_name: "{{ common_organizational_unit_name }}"
+#    state_or_province_name: "{{ common_ssl_state_or_province_name }}"
+# ### Certificate
+#    cert_filename: "{{ common_domain_name }}-ca.crt"
+#    provider: 'selfsigned'
+# Ordinary cert
+# Directories
+#  - private_dir: "{{ common_ssl_config_dir }}/objname/private"
+#    certs_dir: "{{ common_ssl_config_dir }}/objname"
+# CA Host
+#    common_ssl_ca_host: "{{ common_ssl_ca_host }}"
+# ### Private key
+#    privatekey_filename: "objname.key"
+# ### Certificate Signing Request (CSR)
+#    csr_filename: "objname.csr"
+#    common_name: "objname"
+#    country_name: "{{ common_country_name }}"
+#    email_address: "{{ common_ssl_owner_email_address }}"
+#    locality_name: "{{ common_ssl_locality_name }}"
+#    organization_name: "{{ common_organization_name }}"
+# #   organizational_unit_name: "{{ common_organizational_unit_name }}"
+# ### Certificate
+#    cert_filename: "objname.crt"
+#    ownca_path: "{{ common_ssl_ca_cert }}"
+#    ownca_privatekey_path: "{{ common_ssl_ca_pkey }}"
+#    provider: 'ownca'
+#    state_or_province_name: "{{ common_ssl_state_or_province_name }}"
+#    subject_alt_name: "{{ common_ssl_subject_alt_name }}"
+# ### Diffie-Hellman Parameters file
+#    dh:
+#      filename: "objname-dh.pem"
 
 # Locale and language settings
 # list of needed locales
-common_locales_list:
+common_locales_list: []
 #  - locale: "en_US"
 #    encoding: "ISO-8859-1"
 #  - locale: "en_US.UTF-8"
@@ -58,7 +105,7 @@ common_locales_list:
 #  - locale: "ru_RU.CP1251"
 #    encoding: "CP1251"
 # list of language settings
-common_lang_settings:
+common_lang_settings: []
 #  - config_path: "/etc/locale.conf"
 #    comment: |
 #      # File /etc/locale.conf is managed by ansible.
@@ -96,7 +143,8 @@ common_resolver_params:
     value: "{{ common_domain_name }}"
 
 # Time sync parameters
-common_timesync_packages: # ["systemd-timesyncd"]
+common_timesync_packages: []
+#  - "systemd-timesyncd"
 common_time_config_path: "/etc/systemd/timesyncd.conf"
 common_timesync_params:
   - name: "NTP"
@@ -108,7 +156,7 @@ common_timezone: "Europe/Moscow"
 # local_store is used for store any files: certs, keys etc
 # in future central store will be moved from filesystemd to other storage type
 common_central_store: "/opt/common_central_store"
-common_efi_mountpoint:
+# common_efi_mountpoint:
 common_config_dirs: {}
 #
 common_system_config_default: []
@@ -123,7 +171,7 @@ common_system_config_default: []
 # custom systemd units, default is empty
 common_systemd_units_default: []
 # any crontabs variables, default is empty
-common_cron_service:
+common_cron_service: []
 # For example there is settings for update auth info for user portage
 common_crontabs_default: []
 #  - name: "portage_kinit_renew"
@@ -142,12 +190,14 @@ common_polkit_rules: []
 ##  as template of rules for power off/reboot host
 #  - action: "20-power"
 #    group: "wheel"
+#    group: "wheelfalse
+#    group: "wheelfalse
 #    template_path: "{{ common_templates_path }}"
 
-# Variables for 
-common_user_sk:
-common_user_sk_shell:
-common_sk_hosts_group:
+# Variables for ssh keys generation and deploy
+# common_user_sk:
+# common_user_sk_shell:
+# common_sk_hosts_group:
 
 # Any default settings for Gentoo portage
 # System packages for install by portage (Gentoo Linux).
@@ -167,7 +217,9 @@ common_portage_packages_default: []
 #  - "app-shells/bash-completion"
 #  - "app-vim/vim-spell-en"
 #  - "app-vim/vim-spell-ru"
+    #    group: "wheelfalse
 #  - "dev-util/strace"
+    #    group: "wheelfalse
 #  - "net-analyzer/traceroute"
 #  - "net-dns/bind-tools"
 ##  - "net-misc/networkmanager"
