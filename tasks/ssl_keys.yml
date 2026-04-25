@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 ---
-# Create ssl keys/certs for any objects
-- name: Show variables
-  ansible.builtin.debug:
-    msg: "{{ csk }}"
 # Directories for create keys/certs exist
 - name: Check if necessary directories exist
   become: true
@@ -94,7 +90,7 @@
         authority_cert_serial_number: "{{ csk.authority_cert_serial_number | default(omit) }}"
         authority_key_identifier: "{{ csk.authority_key_identifier | default(omit) }}"
         backup: "{{ csk.csr_backup | default(omit) }}"
-        basic_constraints: "{{ csk.basic_constraints | default(omit) }}" # for example ['CA:TRUE']
+        basic_constraints: "{{ csk.basic_constraints | default(['CA:FALSE']) }}"
         basic_constraints_critical: "{{ csk.basic_constraints_critical | default(omit) }}"
         common_name: "{{ csk.common_name | default(common_domain_name) }}"
         country_name: "{{ csk.country_name | default(common_country_name) | default(omit) }}"
