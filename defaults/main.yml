@@ -14,7 +14,8 @@ common_vars_dir: "{{ role_path }}/vars"
 # sudo settings for local ops user
 common_sudoers_dir: "/etc/sudoers.d"
 common_ops_uid: # 1000
-common_ops_user: # "admin"
+common_ops_user: # "admin" for example
+common_ops_group: # "adminsds" for example. This group may be used in centalized auth systems
 common_sudo_group: # "wheel" in many distros but "sudo" on debian
 common_sudo_groups:
 #  - name: "{{ common_sudo_group }}"

@@ -130,6 +130,7 @@
 # Time sync is not need on containers
 - name: Set time sync if needed
   when: common_timesync_service != 'none'
+  tags: system_init,timesync_init
   block:
     - name: Install timesync packages on normal Linux distros
       when: ansible_pkg_mgr != "apt_rpm"
@@ -152,7 +153,6 @@
         block: |
           # File "{{ common_time_config_path }}"
           # managed by ansible. You shouldn't edit it manually
-      tags: system_init,timesync_init
     - name: Edit time sync config
       ansible.builtin.lineinfile:
         path: "{{ common_time_config_path }}"
@@ -165,7 +165,6 @@
       notify:
         - Timesync_service enable
         - Timesync_service restart
-      tags: system_init,timesync_init
 ### END: Set system date and time and time sync ###
 
 ### BEGIN: Install system ###
