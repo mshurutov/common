@@ -13,17 +13,21 @@
   ansible.builtin.assert:
     that:
       - common_ip4_default is defined
+      - common_ip4_default is not none
       - common_ip4_default != "127.0.0.1"
       - common_short_hostname is defined
+      - common_short_hostname is not none
       - common_short_hostname != "myhost"
       - common_domain_name is defined
+      - common_domain_name is not none
       - common_domain_name != "example.com"
       - common_full_hostname is defined
+      - common_full_hostname is not none
       - common_full_hostname | length > 0
     fail_msg: |
       Any of necessary variables:
         - common_ip4_default: "127.0.0.1" # must be changed
         - common_short_hostname: "myhost" # must be changed
         - common_domain_name: "example.com" # must be changed
-        - common_full_hostname: # may be "{{ common_short_hostname }}.{{ common_domain_name }}"
+        - common_full_hostname: "{{ common_short_hostname }}.{{ common_domain_name }}"
       is wrong

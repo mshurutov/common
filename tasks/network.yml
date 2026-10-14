@@ -106,6 +106,7 @@
   tags: system_init,resolver_init
   block:
     - name: Install resolver packages
+      tags: resolver_install
       block:
         - name: Install resolver packages on normal Linux distros
           when: ansible_pkg_mgr != "apt_rpm"
@@ -126,30 +127,33 @@
         block: |
           # File {{ common_resolver_config }}
           # managed by ansible. You shouldn't edit it manually
-    - name: Set params in resolver config file
-      ansible.builtin.lineinfile:
-        path: "{{ common_resolver_config }}"
-        regexp: '^#?\s*{{ item.name }}\s*=.*'
-        line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}={% else %} {% endif %}{{ item.value }}"
-        state: present
-      loop: "{{ common_resolver_params }}"
-    - name: Set systemd resolver settings
-      when: common_resolver == 'systemd-resolved'
+    - name: Configure resolver
+      tags: resolver_config
+      notify:
+        - Resolver enable
+        - Resolver restart
       block:
-        - name: Check if systemd-resolved is started
-          ansible.builtin.service:
-            name: "systemd-resolved"
-            state: "started"
-        - name: Delete /etc/resolv.conf
-          ansible.builtin.file:
-            path: /etc/resolv.conf
-            state: absent
-        - name: Set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
-          ansible.builtin.file:
-            path: /etc/resolv.conf
-            src: /run/systemd/resolve/stub-resolv.conf
-            state: link
-          notify:
-            - Resolver enable
-            - Resolver restart
+        - name: Set params in resolver config file
+          ansible.builtin.lineinfile:
+            path: "{{ common_resolver_config }}"
+            regexp: '^#?\s*{{ item.name }}\s*=.*'
+            line: "{{ item.name }}{% if common_resolver == 'systemd-resolved' %}={% else %} {% endif %}{{ item.value }}"
+            state: present
+          loop: "{{ common_resolver_params }}"
+        - name: Set systemd resolver settings
+          when: common_resolver == 'systemd-resolved'
+          block:
+            - name: Check if systemd-resolved is started
+              ansible.builtin.service:
+                name: "systemd-resolved"
+                state: "started"
+            - name: Delete /etc/resolv.conf
+              ansible.builtin.file:
+                path: /etc/resolv.conf
+                state: absent
+            - name: Set symlink /run/systemd/resolve/stub-resolv.conf -> /etc/resolv.conf
+              ansible.builtin.file:
+                path: /etc/resolv.conf
+                src: /run/systemd/resolve/stub-resolv.conf
+                state: link
 ### END: Hostname and name resoling settings ###

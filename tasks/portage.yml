@@ -19,6 +19,7 @@
         state: "mounted"
         fstype: "vfat"
     - name: Update world
+      notify: Systemd daemon reload
       community.general.portage:
         package: "@world"
 #        quiet: true

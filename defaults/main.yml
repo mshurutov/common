@@ -2,9 +2,10 @@
 # By default any settings is defined for Russia because I'm Russian
 # Necessary network variables.
 common_ip4_default: "127.0.0.1" # must be changed
+common_ip4_network: "127.0.0.1/32" # must be changed, for example 192.168.1.0/24
 common_short_hostname: "myhost" # must be changed
 common_domain_name: "example.com" # must be changed
-common_full_hostname: # may be "{{ common_short_hostname }}.{{ common_domain_name }}"
+common_full_hostname: "{{ common_short_hostname }}.{{ common_domain_name }}" # may be changed
 # directories for role templates and variables
 common_templates_path: "{{ role_path }}/templates"
 common_etc_templates_path: "{{ common_templates_path }}"
@@ -13,11 +14,11 @@ common_vars_dir: "{{ role_path }}/vars"
 
 # sudo settings for local ops user
 common_sudoers_dir: "/etc/sudoers.d"
-common_ops_uid: # 1000
-common_ops_user: # "admin" for example
-common_ops_group: # "adminsds" for example. This group may be used in centalized auth systems
-common_sudo_group: # "wheel" in many distros but "sudo" on debian
-common_sudo_groups:
+common_ops_uid: 1000
+common_ops_user: "admin" # for example
+common_ops_group: "adminsds" # for example. This group may be used in centalized auth systems
+common_sudo_group: "wheel" # in many distros but "sudo" on debian
+common_sudo_groups: []
 #  - name: "{{ common_sudo_group }}"
 #    gid: # 10 for wheel group, 27 for sudo on Debian
 #  - name: "{{ common_ops_user }}"
@@ -29,7 +30,7 @@ common_ssl_state_or_province_name: "Moscow Region"
 common_ssl_locality_name: "Moscow"
 common_organization_name: "Free Artist LTD"
 common_organizational_unit_name: "SysOps Team"
-common_ssl_owner_email_address: "admin@example.com"
+common_ssl_owner_email_address: "admin@example.com" # must be changed
 common_ssl_config_dir: "/etc/ssl"
 common_ssl_private_keys_dir: "{{ common_ssl_config_dir }}/private"
 common_ssl_certs_dir: "{{ common_ssl_config_dir }}/certs"
@@ -37,7 +38,7 @@ common_ssl_cs_path: "ssl-certs"
 common_ssl_ca_pkey: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca.key"
 common_ssl_ca_csr: "{{ common_ssl_private_keys_dir }}/{{ common_domain_name }}-ca.csr"
 common_ssl_ca_cert: "{{ common_ssl_certs_dir }}/{{ common_domain_name }}-ca.pem"
-common_ssl_ca_host:
+common_ssl_ca_host: "pki.example.com" # must be changed
 common_ssl_keys: []
 # CA
 # Directories
@@ -131,8 +132,8 @@ common_kbd_n_cfont_settings: []
 common_network_manager: 'dhcp'
 common_nm_connections: []
 # DNS resolver settings
-common_resolver_packages:
-#  - "systemd-resolved"
+common_resolver_packages: []
+#   - "systemd-resolved"
 common_resolver_config: "/etc/systemd/resolved.conf"
 common_resolver: 'systemd-resolved'
 common_dns: "192.168.1.1"

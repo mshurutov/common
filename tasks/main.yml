@@ -96,30 +96,33 @@
 ### END: Edit any system configs ###
 
 ### BEGIN: Locale settings ###
-- name: Create /etc/locale.gen
-  ansible.builtin.template:
-    src: "{{ common_etc_templates_path }}/locale.gen.j2"
-    dest: "/etc/locale.gen"
-    mode: "0644"
-  notify: Rebuild locales
-  when: ansible_os_family == "Gentoo" or ansible_os_family == "Debian"
+- name: Localization
   tags: system_init,locale_init
-- name: Create /etc/locale.conf
-  ansible.builtin.template:
-    src: "{{ common_etc_templates_path }}/locale.conf.j2"
-    dest: "{{ lc.config_path }}"
-    mode: "0644"
-  loop: "{{ common_lang_settings }}"
-  loop_control:
-    loop_var: lc
-  tags: system_init,locale_init
-- name: Create /etc/vconsole.conf
-  ansible.builtin.template:
-    src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
-    dest: "/etc/vconsole.conf"
-    mode: "0644"
-  when: common_kbd_n_cfont_settings is defined and common_kbd_n_cfont_settings | length > 0
-  tags: system_init,locale_init
+  block:
+    - name: Create /etc/locale.gen
+      ansible.builtin.template:
+        src: "{{ common_etc_templates_path }}/locale.gen.j2"
+        dest: "/etc/locale.gen"
+        mode: "0644"
+      notify: Rebuild locales
+      tags: locale_gen
+      when: ansible_os_family == "Gentoo" or ansible_os_family == "Debian"
+    - name: Create /etc/locale.conf
+      ansible.builtin.template:
+        src: "{{ common_etc_templates_path }}/locale.conf.j2"
+        dest: "{{ lc.config_path }}"
+        mode: "0644"
+      loop: "{{ common_lang_settings }}"
+      loop_control:
+        loop_var: lc
+      tags: locale_conf
+    - name: Create /etc/vconsole.conf
+      ansible.builtin.template:
+        src: "{{ common_etc_templates_path }}/vconsole.conf.j2"
+        dest: "/etc/vconsole.conf"
+        mode: "0644"
+      when: common_kbd_n_cfont_settings is defined and common_kbd_n_cfont_settings | length > 0
+      tags: console_conf
 ### END: Locale settings ###
 
 ### BEGIN: Set system date and time and time sync ###
