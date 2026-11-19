@@ -17,7 +17,7 @@ common_sudoers_dir: "/etc/sudoers.d"
 common_ops_uid: 1000
 common_ops_user: "admin" # for example
 common_ops_group: "adminsds" # for example. This group may be used in centalized auth systems
-common_sudo_group: "wheel" # in many distros but "sudo" on debian
+common_sudo_group: "wheel" # in many distros bualwayst "sudo" on debian
 common_sudo_groups: []
 #  - name: "{{ common_sudo_group }}"
 #    gid: # 10 for wheel group, 27 for sudo on Debian
@@ -305,10 +305,43 @@ portage_env_default: {}
 #      - "sys-libs/glibc"
 
 # apt (Debian-based system) settings
-apt_system_repos: []
+apt_repo_list: []
 #  - filename: # system repos is repos that defined in "/etc/apt/sources.list"
 #    repo: # should be a list
-#      - "deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware"
+#      - # Enabled: false
+#        Types:
+#          - "deb"
+#          - "deb-src"
+#        URIs:
+#          - http://deb.debian.org/debian/
+#        Suites:
+#          - "trixie"
+#          - "trixie-updates"
+#        Components:
+#          - "main"
+#          - "contrib"
+#          - "non-free"
+#          - "non-free-firmware"
+#        Options:
+#          - Signed-By:
+#              - "/usr/share/keyrings/debian-archive-keyring.gpg"
+#            # Architectures:
+#            #   - "arm64"
+#            # Languages:
+#            # Targets:
+#            # PDiffs:
+#            # By-Hash:
+#            # Allow-Insecure:
+#            # Allow-Weak:
+#            # Downgrade-To-Insecure:
+#            # Trusted:
+#            # Check-Valid-Until:
+#            # Valid-Until-Min:
+#            # Valid-Until-Max:
+#            # Check-Date:
+#            # Date-Max-Future:
+#            # InRelease-Path:
+#            # Snapshot:
 apt_system_packages_default: []
 #  - "acl"
 #  - "vim"
@@ -332,10 +365,6 @@ apt_python:
   - path: "/usr/bin/python{{ apt_python_version }}"
     priority: "2"
     state: "selected"
-apt_repo_list: []
-#  filename: "system" # this repo is being set in /etc/apt/sources.list.d/system.list
-#  repo: # should be a list
-#    - "deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware"
 
 # dnf (RedHat-8+ based systems) settings
 common_dnf_proxy:

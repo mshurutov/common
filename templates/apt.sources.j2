@@ -1,0 +1,43 @@
+{% set multivalopts = [
+    'Architectures',
+	'Languages',
+	'Targets',
+	'Signed-By',
+] %}
+{% set singlevalopts = [
+    'PDiffs',
+	'By-Hash',
+	'Allow-Insecure',
+	'Allow-Weak',
+    'Allow-Downgrade-To-Insecure',
+	'Check-Valid-Until',
+	'Valid-Until-Min',
+	'Valid-Until-Max',
+    'Check-Date',
+	'Date-Max-Future',
+	'InRelease-Path',
+	'Snapshot',
+] %}
+{% macro ls2str(ls=[]) -%}
+{% for val in ls %}{{ val }}{% if not loop.last %} {% endif %}{% endfor %}
+{%- endmacro %}
+{% for repokey,repoval in arl.repo.items() %}
+{# Enabled is not required #}
+{% if repokey | regex_replace("_","-") == 'Enabled' %}
+Enabled: {{ repoval }}
+{% elif repokey | regex_replace("_","-") != 'Options' %}
+{# Types, URIs and Suites is required #}
+{{ repokey | regex_replace("_","-") }}: {{ ls2str(repoval) }}
+{% else %}
+{% for optname,optval in repoval.items() %}
+{% if optname | regex_replace("_","-") in multivalopts %}
+{{ optname | regex_replace("_","-") }}: {{ ls2str(optval) }}
+{% elif optname | regex_replace("_","-") in singlevalopts %}
+{{ optname | regex_replace("_","-") }}: {{ optval }}
+{% endif %}
+{% endfor %}
+{% if not loop.last %}
+
+{% endif %}
+{% endif %}
+{% endfor %}

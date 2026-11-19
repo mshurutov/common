@@ -73,7 +73,7 @@
         mode: "{{ csk.private_key_mode | default('0600') }}"
         owner: "{{ csk.owner | default('root') }}"
         passphrase: "{{ csk.passphrase | default(omit) }}"
-        path: "{{ hostvars['common_pki_server']['create_ssl_priv_dir'] }}/{{ csk.privatekey_filename }}"
+        path: "{{ hostvars[common_pki_server]['create_ssl_priv_dir'] }}/{{ csk.privatekey_filename }}"
         regenerate: "{{ csk.regenerate | default(omit) }}"
         return_content: true
         select_crypto_backend: "{{ csk.select_crypto_backend | default(omit) }}"
@@ -118,10 +118,10 @@
         organization_name: "{{ csk.organization_name | default(common_organization_name) | default(omit) }}"
         organizational_unit_name: "{{ csk.organizational_unit_name | default(common_organizational_unit_name) | default(omit) }}"
         owner: "{{ csk.owner | default('root') }}"
-        path: "{{ hostvars['common_pki_server']['create_ssl_priv_dir'] }}/{{ csk.csr_filename }}"
+        path: "{{ hostvars[common_pki_server]['create_ssl_priv_dir'] }}/{{ csk.csr_filename }}"
 #        privatekey_content: "{{ ssl_pk_var.privatekey }}" # I use file, but you...
         privatekey_passphrase: "{{ csk.privatekey_passphrase | default(omit) }}"
-        privatekey_path: "{{ hostvars['common_pki_server']['create_ssl_priv_dir'] }}/{{ csk.privatekey_filename }}"
+        privatekey_path: "{{ hostvars[common_pki_server]['create_ssl_priv_dir'] }}/{{ csk.privatekey_filename }}"
         return_content: true
         select_crypto_backend: "{{ csk.select_crypto_backend | default(omit) }}"
         selevel: "{{ csk.level | default(omit) }}"
@@ -150,7 +150,7 @@
         attributes: "{{ csk.attributes | default(omit) }}"
         backup: "{{ csk.cert_backup | default(omit) }}"
 #        csr_content: "{{ ssl_csr_var.csr }}"
-        csr_path: "{{ hostvars['common_pki_server']['create_ssl_priv_dir'] }}/{{ csk.csr_filename }}"
+        csr_path: "{{ hostvars[common_pki_server]['create_ssl_priv_dir'] }}/{{ csk.csr_filename }}"
         force: "{{ csk.cert_force | default(omit) }}"
         group: "{{ csk.group | default('root') }}" 
         ignore_timestamps: "{{ csk.ignore_timestamps | default(omit) }}"
@@ -168,10 +168,10 @@
         ownca_privatekey_path: "{{ csk.ownca_privatekey_path | default(common_ssl_ca_pkey) | default(omit) }}"
         ownca_version: "{{ csk.ownca_version | default(omit) }}"
         owner: "{{ csk.owner | default('root') }}"
-        path: "{{ hostvars['common_pki_server']['create_ssl_certs_dir'] }}/{{ csk.cert_filename }}"
+        path: "{{ hostvars[common_pki_server]['create_ssl_certs_dir'] }}/{{ csk.cert_filename }}"
 #        privatekey_content: "{{ ssl_pk_var.privatekey }}" # I use file, but you...
         privatekey_passphrase: "{{ csk.privatekey_passphrase | default(omit) }}"
-        privatekey_path: "{{ hostvars['common_pki_server']['create_ssl_priv_dir'] }}/{{ csk.privatekey_filename }}"
+        privatekey_path: "{{ hostvars[common_pki_server]['create_ssl_priv_dir'] }}/{{ csk.privatekey_filename }}"
         provider: "{{ csk.provider | default('ownca') }}"
         return_content: true
         select_crypto_backend: "{{ csk.select_crypto_backend | default(omit) }}"
@@ -228,7 +228,7 @@
             group: "{{ csk.dh.group | default(omit) }}"
             mode: "{{ csk.dh.mode | default(omit) }}"
             owner: "{{ csk.dh.owner | default(omit) }}"
-            path: "{{ hostvars['common_pki_server']['create_ssl_certs_dir'] }}/{{ csk.dh.filename }}"
+            path: "{{ hostvars[common_pki_server]['create_ssl_certs_dir'] }}/{{ csk.dh.filename }}"
             return_content: true
             select_crypto_backend: "{{ csk.dh.select_crypto_backend | default(omit) }}"
             selevel: "{{ csk.dh.selevel | default(omit) }}"
